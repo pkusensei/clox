@@ -1,0 +1,22 @@
+﻿{
+  "configurations": [
+    {
+      "name": "x64-Clang-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "clang_cl_x64" ],
+      "variables": [
+        {
+          "name": "CMAKE_CXX_COMPILER",
+          "value": "${env.USERPROFILE}/Documents/LLVM/bin/clang-cl.exe",
+          "type": "FILEPATH"
+        }
+      ]
+    }
+  ]
+}
