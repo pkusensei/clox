@@ -13,16 +13,16 @@ const ParseRule& get_rule(TokenType type) noexcept
 	return Compilation::rules[static_cast<size_t>(type)];
 }
 
-bool Compilation::compile(std::string_view source, VM& vm)
+ObjFunction* Compilation::compile(std::string_view source, VM& vm)
 {
 	Compilation cu(source, vm);
-	cu.init_compiler();
+	cu.init_compiler(FunctionType::Script);
 	cu.advance();
 	while (!cu.match(TokenType::Eof))
 		cu.declaration();
 
-	cu.end_compiler();
-	return !cu.parser.had_error;
+	auto function = cu.end_compiler();
+	return cu.parser.had_error ? nullptr : function;
 }
 
 void Compilation::expression()
@@ -368,9 +368,15 @@ uint8_t Compilation::parse_variable(std::string_view error)
 	return identifier_constant(parser.previous);
 }
 
-void Compilation::init_compiler()
+void Compilation::init_compiler(FunctionType type)
 {
 	current = std::make_unique<Compiler>();
+	current->function = create_obj_function(vm);
+	current->type = type;
+
+	auto& local = current->locals.at(current->local_count++);
+	local.depth = 0;
+	local.name.text = std::string_view();
 }
 
 void Compilation::add_local(const Token& name)
@@ -480,18 +486,23 @@ bool Compilation::match(TokenType type)
 	return true;
 }
 
-void Compilation::end_compiler() const
+ObjFunction* Compilation::end_compiler() const
 {
 	emit_return();
-	//#ifdef _DEBUG
-	//	if (!parser.had_error)
-	//		disassemble_chunk(current_chunk(), "code");
-	//#endif // _DEBUG
+	auto function = current->function;
+
+#ifdef _DEBUG
+	if (!parser.had_error)
+		disassemble_chunk(current_chunk(),
+			function->name == nullptr ? "<script>" : function->name->text());
+#endif // _DEBUG
+
+	return function;
 }
 
 Chunk& Compilation::current_chunk() const noexcept
 {
-	return vm.chunk;
+	return current->function->chunk;
 }
 
 void Compilation::error(std::string_view message)

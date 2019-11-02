@@ -4,9 +4,12 @@
 #include <variant>
 #include <vector>
 
-#include "object.h"
-
 namespace Clox {
+
+enum class ObjType;
+struct Obj;
+struct ObjFunction;
+struct ObjString;
 
 struct Value
 {
@@ -30,23 +33,11 @@ struct Value
 		return std::get<T>(value);
 	}
 
-	constexpr bool is_obj_type(ObjType type)const
-	{
-		if (is_obj())
-		{
-			auto obj = as<Obj*>();
-			return obj->is_type(type);
-		}
-		return false;
-	}
-	constexpr bool is_string()const { return is_obj_type(ObjType::String); }
-
-	constexpr ObjString* as_string()const
-	{
-		if (!is_obj_type(ObjType::String))
-			throw std::invalid_argument("Value is not a string.");
-		return static_cast<ObjString*>(as<Obj*>());
-	}
+	bool is_obj_type(ObjType type)const;
+	bool is_function()const;
+	bool is_string()const;
+	ObjFunction* as_function()const;
+	ObjString* as_string()const;
 };
 
 constexpr bool operator==(const Value& v1, const Value& v2)noexcept

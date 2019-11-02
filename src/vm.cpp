@@ -25,8 +25,15 @@ constexpr bool is_falsey(const Value& value)
 
 InterpretResult VM::interpret(std::string_view source)
 {
-	if (!Compilation::compile(source, *this))
+	auto function = Compilation::compile(source, *this);
+	if (function == nullptr)
 		return InterpretResult::CompileError;
+
+	push(function);
+	auto& frame = frames.at(frame_count++);
+	frame.function = function;
+	frame.ip = 0;
+	frame.slots = 0;
 	return run();
 }
 
@@ -34,6 +41,7 @@ InterpretResult VM::run()
 {
 	while (true)
 	{
+		auto& frame = frames.at(frame_count - 1);
 #ifdef _DEBUG
 		std::cout << "          ";
 		for (size_t slot = 0; slot < stacktop; ++slot)
@@ -41,15 +49,15 @@ InterpretResult VM::run()
 			std::cout << "[ " << stack.at(slot) << " ]";
 		}
 		std::cout << '\n';
-		disassemble_instruction(chunk, ip);
+		disassemble_instruction(frame.chunk(), frame.ip);
 #endif // _DEBUG
 
-		auto instruction = read_byte();
+		auto instruction = frame.read_byte();
 		switch (instruction)
 		{
 			case OpCode::Constant:
 			{
-				auto&& constant = read_constant();
+				auto&& constant = frame.read_constant();
 				push(constant);
 				break;
 			}
@@ -59,46 +67,46 @@ InterpretResult VM::run()
 			case OpCode::Pop: pop(); break;
 			case OpCode::GetLocal:
 			{
-				auto slot = static_cast<size_t>(read_byte());
-				push(stack.at(slot));
+				auto slot = static_cast<size_t>(frame.read_byte());
+				push(stack.at(frame.slots + slot));
 				break;
 			}
 			case OpCode::SetLocal:
 			{
-				auto slot = static_cast<size_t>(read_byte());
-				stack.at(slot) = peek(0);
+				auto slot = static_cast<size_t>(frame.read_byte());
+				stack.at(frame.slots + slot) = peek(0);
 				break;
 			}
 			case OpCode::GetGlobal:
 			{
-				auto name = read_string();
+				auto name = frame.read_string();
 				try
 				{
 					auto& value = globals.at(name);
 					push(value);
 				} catch (const std::out_of_range&)
 				{
-					runtime_error("Undefined variable ", name->to_string());
+					runtime_error("Undefined variable ", name->text());
 					return InterpretResult::RuntimeError;
 				}
 				break;
 			}
 			case OpCode::DefineGlobal:
 			{
-				auto name = read_string();
+				auto name = frame.read_string();
 				globals.insert_or_assign(name, peek(0));
 				pop();
 				break;
 			}
 			case OpCode::SetGlobal:
 			{
-				auto name = read_string();
+				auto name = frame.read_string();
 				try
 				{
 					globals.at(name) = peek(0);
 				} catch (const std::out_of_range&)
 				{
-					runtime_error("Undefined variable ", name->to_string());
+					runtime_error("Undefined variable ", name->text());
 					return InterpretResult::RuntimeError;
 				}
 				break;
@@ -148,21 +156,21 @@ InterpretResult VM::run()
 				break;
 			case OpCode::Jump:
 			{
-				auto offset = read_short();
-				ip += offset;
+				auto offset = frame.read_short();
+				frame.ip += offset;
 				break;
 			}
 			case OpCode::JumpIfFalse:
 			{
-				auto offset = read_short();
+				auto offset = frame.read_short();
 				if (is_falsey(peek(0)))
-					ip += offset;
+					frame.ip += offset;
 				break;
 			}
 			case OpCode::Loop:
 			{
-				auto offset = read_short();
-				ip -= offset;
+				auto offset = frame.read_short();
+				frame.ip -= offset;
 				break;
 			}
 			case OpCode::Return:
@@ -191,27 +199,27 @@ void VM::push(Value value)
 	stacktop++;
 }
 
-OpCode VM::read_byte()
+OpCode CallFrame::read_byte()
 {
-	auto code = chunk.code.at(ip);
+	auto code = chunk().code.at(ip);
 	ip++;
 	return code;
 }
 
-Value VM::read_constant()
+Value CallFrame::read_constant()
 {
-	return chunk.constants.values.at(static_cast<size_t>(read_byte()));
+	return chunk().constants.values.at(static_cast<size_t>(read_byte()));
 }
 
-uint16_t VM::read_short()
+uint16_t CallFrame::read_short()
 {
 	ip += 2;
-	auto a = static_cast<uint8_t>(chunk.code.at(ip - 2)) << 8;
-	auto b = static_cast<uint8_t>(chunk.code.at(ip - 1));
+	auto a = static_cast<uint8_t>(chunk().code.at(ip - 2)) << 8;
+	auto b = static_cast<uint8_t>(chunk().code.at(ip - 1));
 	return static_cast<uint16_t>(a | b);
 }
 
-ObjString* VM::read_string()
+ObjString* CallFrame::read_string()
 {
 	return read_constant().as_string();
 }

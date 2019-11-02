@@ -7,10 +7,12 @@
 #include <set>
 
 #include "chunk.h"
+#include "object.h"
 
 namespace Clox {
 
-constexpr auto STACK_MAX = 256;
+constexpr auto FRAME_MAX = 64;
+constexpr auto STACK_MAX = FRAME_MAX * UINT8_COUNT;
 
 template<typename T, typename... Args>
 void err_print(T&& t, Args&&... args)
@@ -32,10 +34,24 @@ enum class InterpretResult
 	RuntimeError
 };
 
+struct CallFrame
+{
+	ObjFunction* function = nullptr;
+	size_t ip = 0; // index at function->chunk.code
+	size_t slots = 0;  // index at VM::stack
+
+	OpCode read_byte();
+	Value read_constant();
+	uint16_t read_short();
+	ObjString* read_string();
+
+	Chunk& chunk()const noexcept { return function->chunk; }
+};
+
 struct VM
 {
-	Chunk chunk;
-	size_t ip = 0;
+	std::array<CallFrame, FRAME_MAX> frames = {};
+	size_t frame_count = 0;
 	std::unique_ptr<Obj, ObjDeleter> objects = nullptr;
 	std::array<Value, STACK_MAX> stack = {};
 	size_t stacktop = 0;
@@ -52,17 +68,14 @@ private:
 	void push(Value value);
 
 	void reset_stack()noexcept { stacktop = 0; }
-	OpCode read_byte();
-	Value read_constant();
-	uint16_t read_short();
-	ObjString* read_string();
 
 	template<typename... Args>
 	void runtime_error(Args&&... args)
 	{
 		err_print(std::forward<Args>(args)...);
 		std::cerr << '\n';
-		auto line = chunk.lines.at(ip);
+		auto& frame = frames.at(frame_count - 1);
+		auto line = frame.chunk().lines.at(frame.ip);
 		std::cerr << "[line " << line << "] in script\n";
 		reset_stack();
 	}

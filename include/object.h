@@ -3,17 +3,16 @@
 #include <memory>
 #include <string_view>
 
-//#include "vm.h"
+#include "chunk.h"
 
 namespace Clox {
 
 struct Obj;
 struct VM;
 
-Obj* create_obj(Obj* obj, VM& vm);
-
 enum class ObjType
 {
+	Function,
 	String
 };
 
@@ -31,7 +30,7 @@ struct Obj
 	{
 		return this->type == type;
 	}
-	virtual std::string_view to_string()const = 0;
+	virtual void to_ostream(std::ostream& out)const = 0;
 
 protected:
 	constexpr Obj(ObjType type) noexcept
@@ -40,16 +39,30 @@ protected:
 	}
 };
 
+void create_obj(Obj* obj, VM& vm);
+
 template<typename Derived>
 struct ObjT :public Obj
 {
 	constexpr explicit ObjT(ObjType type) noexcept :Obj(type) {}
 	const Derived& as()const noexcept { return static_cast<const Derived&>(*this); }
-	std::string_view to_string()const final
+	void to_ostream(std::ostream& out)const final
 	{
-		return as().text();
+		out << as();
 	}
 };
+
+struct ObjFunction final : public ObjT<ObjFunction>
+{
+	size_t arity = 0;
+	Chunk chunk;
+	ObjString* name = nullptr;
+
+	ObjFunction() :ObjT(ObjType::Function) {}
+};
+
+std::ostream& operator<<(std::ostream& out, const ObjFunction& f);
+ObjFunction* create_obj_function(VM& vm);
 
 struct ObjString final :public ObjT<ObjString>
 {
@@ -59,6 +72,7 @@ struct ObjString final :public ObjT<ObjString>
 	std::string_view text()const { return content; }
 };
 
+std::ostream& operator<<(std::ostream& out, const ObjString& s);
 std::string operator+(const ObjString& lhs, const ObjString& rhs);
 
 } //Clox

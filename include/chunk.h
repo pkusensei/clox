@@ -8,6 +8,8 @@
 
 namespace Clox {
 
+constexpr auto UINT8_COUNT = UINT8_MAX + 1;
+
 enum class OpCode :uint8_t
 {
 	Constant,

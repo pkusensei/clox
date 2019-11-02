@@ -8,8 +8,6 @@
 
 namespace Clox {
 
-constexpr auto UINT8_COUNT = UINT8_MAX + 1;
-
 enum class Precedence :uint8_t
 {
 	None,
@@ -47,6 +45,12 @@ struct ParseRule
 	Precedence precedence;
 };
 
+enum class FunctionType
+{
+	Function,
+	Script,
+};
+
 struct Local
 {
 	Token name;
@@ -55,6 +59,9 @@ struct Local
 
 struct Compiler
 {
+	ObjFunction* function = nullptr;
+	FunctionType type = FunctionType::Script;
+
 	std::array<Local, UINT8_COUNT> locals = {};
 	size_t local_count = 0;
 	int scope_depth = 0;
@@ -69,7 +76,7 @@ struct Compilation
 	Scanner scanner;
 	VM& vm;
 
-	static bool compile(std::string_view source, VM& vm);
+	static ObjFunction* compile(std::string_view source, VM& vm);
 
 	Compilation(std::string_view source, VM& vm)
 		:parser(), scanner(source), vm(vm)
@@ -107,7 +114,7 @@ private:
 	void parse_precedence(Precedence precedence);
 	uint8_t parse_variable(std::string_view error);
 
-	void init_compiler();
+	void init_compiler(FunctionType type);
 	void add_local(const Token& name);
 	void begin_scope()const;
 	void end_scope()const;
@@ -166,7 +173,7 @@ private:
 	bool check(TokenType type)const noexcept;
 	void consume(TokenType type, std::string_view message);
 	bool match(TokenType type);
-	void end_compiler()const;
+	ObjFunction* end_compiler()const;
 
 	Chunk& current_chunk()const noexcept;
 
