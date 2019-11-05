@@ -33,8 +33,13 @@ InterpretResult VM::interpret(std::string_view source)
 	auto& frame = frames.at(frame_count++);
 	frame.function = function;
 	frame.ip = 0;
-	frame.slots = 0;
+	frame.slots = stack.data();
 	return run();
+}
+
+VM::VM()
+{
+	reset_stack();
 }
 
 InterpretResult VM::run()
@@ -42,15 +47,15 @@ InterpretResult VM::run()
 	while (true)
 	{
 		auto& frame = frames.at(frame_count - 1);
-#ifdef _DEBUG
-		std::cout << "          ";
-		for (size_t slot = 0; slot < stacktop; ++slot)
-		{
-			std::cout << "[ " << stack.at(slot) << " ]";
-		}
-		std::cout << '\n';
-		disassemble_instruction(frame.chunk(), frame.ip);
-#endif // _DEBUG
+//#ifdef _DEBUG
+//		std::cout << "          ";
+//		for (size_t slot = 0; slot < stacktop; ++slot)
+//		{
+//			std::cout << "[ " << stack.at(slot) << " ]";
+//		}
+//		std::cout << '\n';
+//		disassemble_instruction(frame.chunk(), frame.ip);
+//#endif // _DEBUG
 
 		auto instruction = frame.read_byte();
 		switch (instruction)
@@ -68,13 +73,13 @@ InterpretResult VM::run()
 			case OpCode::GetLocal:
 			{
 				auto slot = static_cast<size_t>(frame.read_byte());
-				push(stack.at(frame.slots + slot));
+				push(frame.slots[slot]);
 				break;
 			}
 			case OpCode::SetLocal:
 			{
 				auto slot = static_cast<size_t>(frame.read_byte());
-				stack.at(frame.slots + slot) = peek(0);
+				frame.slots[slot] = peek(0);
 				break;
 			}
 			case OpCode::GetGlobal:
@@ -188,8 +193,7 @@ const Value& VM::peek(size_t distance) const
 
 Value VM::pop()
 {
-	if (stacktop > 0)
-		stacktop--;
+	stacktop--;
 	return stack.at(stacktop);
 }
 
@@ -197,6 +201,12 @@ void VM::push(Value value)
 {
 	stack.at(stacktop) = std::move(value);
 	stacktop++;
+}
+
+void VM::reset_stack() noexcept
+{
+	stacktop = 0;
+	frame_count = 0;
 }
 
 OpCode CallFrame::read_byte()

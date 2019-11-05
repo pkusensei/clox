@@ -15,7 +15,7 @@ ObjString* create_obj_string(T&& str, VM& vm)
 	auto p = new ObjString();
 	p->content = std::forward<T>(str);
 	vm.strings.emplace(p);
-	create_obj(p, vm);
+	register_obj(p, vm);
 	return p;
 }
 

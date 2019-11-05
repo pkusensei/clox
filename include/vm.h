@@ -38,14 +38,14 @@ struct CallFrame
 {
 	ObjFunction* function = nullptr;
 	size_t ip = 0; // index at function->chunk.code
-	size_t slots = 0;  // index at VM::stack
+	Value* slots = nullptr;  // pointer to VM::stack
 
 	OpCode read_byte();
 	Value read_constant();
 	uint16_t read_short();
 	ObjString* read_string();
 
-	Chunk& chunk()const noexcept { return function->chunk; }
+	const Chunk& chunk()const noexcept { return function->chunk; }
 };
 
 struct VM
@@ -59,6 +59,7 @@ struct VM
 	std::set<ObjString*> strings;
 
 	InterpretResult interpret(std::string_view source);
+	VM();
 
 private:
 	InterpretResult run();
@@ -67,14 +68,14 @@ private:
 	Value pop();
 	void push(Value value);
 
-	void reset_stack()noexcept { stacktop = 0; }
+	void reset_stack()noexcept;
 
 	template<typename... Args>
 	void runtime_error(Args&&... args)
 	{
 		err_print(std::forward<Args>(args)...);
 		std::cerr << '\n';
-		auto& frame = frames.at(frame_count - 1);
+		const auto& frame = frames.at(frame_count - 1);
 		auto line = frame.chunk().lines.at(frame.ip);
 		std::cerr << "[line " << line << "] in script\n";
 		reset_stack();

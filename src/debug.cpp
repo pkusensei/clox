@@ -37,7 +37,7 @@ size_t jump_instruction(std::string_view name, int sign, const Chunk& chunk, siz
 	jump |= static_cast<uint8_t>(chunk.code.at(offset + 2));
 	std::cout << std::setfill(' ') << std::left << std::setw(16) << name << ' ';
 	std::cout << std::setw(4) << offset << " -> ";
-	std::cout << offset + 3 + sign * jump;
+	std::cout << offset + 3 + sign * jump << '\n';
 	return offset + 3;
 }
 
@@ -72,8 +72,9 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset)
 			return constant_instruction(nameof(instruction), chunk, offset);
 		case OpCode::Jump:
 		case OpCode::JumpIfFalse:
-		case OpCode::Loop:
 			return jump_instruction(nameof(instruction), 1, chunk, offset);
+		case OpCode::Loop:
+			return jump_instruction(nameof(instruction), -1, chunk, offset);
 		case OpCode::Nil:
 		case OpCode::True:
 		case OpCode::False:

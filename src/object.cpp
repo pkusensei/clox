@@ -19,7 +19,23 @@ void ObjDeleter::operator()(Obj* ptr) const
 	}
 }
 
-void create_obj(Obj* obj, VM& vm)
+std::ostream& operator<<(std::ostream& out, const Obj& obj)
+{
+	switch (obj.type)
+	{
+		case ObjType::Function:
+			out << static_cast<const ObjFunction&>(obj);
+			break;
+		case ObjType::String:
+			out << static_cast<const ObjString&>(obj);
+			break;
+		default:
+			break;
+	}
+	return out;
+}
+
+void register_obj(Obj* obj, VM& vm)
 {
 	std::unique_ptr<Obj, ObjDeleter> p(obj, ObjDeleter{});
 	p->next = std::move(vm.objects);
@@ -31,14 +47,14 @@ std::ostream& operator<<(std::ostream& out, const ObjFunction& f)
 	if (f.name == nullptr)
 		out << "<script>";
 	else
-		out << "<fn " << *f.name << " >";
+		out << "<fn " << *f.name << ">";
 	return out;
 }
 
 ObjFunction* create_obj_function(VM& vm)
 {
 	auto p = new ObjFunction();
-	create_obj(p, vm);
+	register_obj(p, vm);
 	return p;
 }
 

@@ -16,13 +16,12 @@ std::ostream& operator<<(std::ostream& out, const Value& value)
 			else if constexpr (std::is_same_v<T, double>)
 				std::cout << arg;
 			else if constexpr (std::is_same_v<T, Obj*>)
-				arg->to_ostream(out);
+				out << *arg;
 		}, value.value);
 	return out;
 }
 
 bool Value::is_obj_type(ObjType type) const
-
 {
 	if (is_obj())
 	{
@@ -44,7 +43,7 @@ bool Value::is_string() const
 
 ObjFunction* Value::as_function() const
 {
-	if (!is_obj_type(ObjType::String))
+	if (!is_obj_type(ObjType::Function))
 		throw std::invalid_argument("Value is not a function.");
 	return static_cast<ObjFunction*>(as<Obj*>());
 }

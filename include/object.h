@@ -30,7 +30,6 @@ struct Obj
 	{
 		return this->type == type;
 	}
-	virtual void to_ostream(std::ostream& out)const = 0;
 
 protected:
 	constexpr Obj(ObjType type) noexcept
@@ -39,17 +38,15 @@ protected:
 	}
 };
 
-void create_obj(Obj* obj, VM& vm);
+std::ostream& operator<<(std::ostream& out, const Obj& obj);
+void register_obj(Obj* obj, VM& vm);
 
 template<typename Derived>
 struct ObjT :public Obj
 {
+protected:
 	constexpr explicit ObjT(ObjType type) noexcept :Obj(type) {}
 	const Derived& as()const noexcept { return static_cast<const Derived&>(*this); }
-	void to_ostream(std::ostream& out)const final
-	{
-		out << as();
-	}
 };
 
 struct ObjFunction final : public ObjT<ObjFunction>

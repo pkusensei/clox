@@ -101,8 +101,8 @@ private:
 	void expression_statement();
 	void for_statement();
 	void if_statement();
-	void while_statement();
 	void print_statement();
+	void while_statement();
 
 	void declaration();
 	void var_declaration();
@@ -167,8 +167,8 @@ private:
 	}
 	void emit_loop(size_t loop_start);
 	void emit_return()const { emit_byte(OpCode::Return); }
-
 	void patch_jump(size_t offset);
+
 	void advance();
 	bool check(TokenType type)const noexcept;
 	void consume(TokenType type, std::string_view message);

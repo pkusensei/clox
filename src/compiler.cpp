@@ -224,6 +224,13 @@ void Compilation::if_statement()
 	emit_byte(OpCode::Pop);
 }
 
+void Compilation::print_statement()
+{
+	expression();
+	consume(TokenType::Semicolon, "Expect ';' after value.");
+	emit_byte(OpCode::Print);
+}
+
 void Compilation::while_statement()
 {
 	auto loop_start = current_chunk().count();
@@ -240,13 +247,6 @@ void Compilation::while_statement()
 
 	patch_jump(exit_jump);
 	emit_byte(OpCode::Pop);
-}
-
-void Compilation::print_statement()
-{
-	expression();
-	consume(TokenType::Semicolon, "Expect ';' after value.");
-	emit_byte(OpCode::Print);
 }
 
 void Compilation::declaration()
@@ -417,8 +417,6 @@ std::optional<uint8_t> Compilation::resolve_local(const Token& name)
 {
 	for (int i = current->local_count - 1; i >= 0; i--)
 	{
-		if (i > UINT8_COUNT)
-			i = UINT8_COUNT - 1;
 		const auto& local = current->locals.at(i);
 		if (name.text == local.name.text)
 		{
