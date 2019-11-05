@@ -62,6 +62,7 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset)
 	auto instruction = chunk.code.at(offset);
 	switch (instruction)
 	{
+		case OpCode::Call:
 		case OpCode::GetLocal:
 		case OpCode::SetLocal:
 			return byte_instruction(nameof(instruction), chunk, offset);

@@ -29,6 +29,7 @@ std::string_view nameof(OpCode code)
 		case OpCode::Jump: return "OpJump";
 		case OpCode::JumpIfFalse: return "OpJumpIfFalse";
 		case OpCode::Loop: return "OpLoop";
+		case OpCode::Call: return "OpCall";
 		case OpCode::Return: return "OpReturn";
 		default:
 			throw std::invalid_argument("Unexpected OpCode: nameof");

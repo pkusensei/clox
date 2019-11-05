@@ -59,6 +59,7 @@ struct Local
 
 struct Compiler
 {
+	std::unique_ptr<Compiler> enclosing = nullptr;
 	ObjFunction* function = nullptr;
 	FunctionType type = FunctionType::Script;
 
@@ -105,7 +106,9 @@ private:
 	void while_statement();
 
 	void declaration();
+	void fun_declaration();
 	void var_declaration();
+	void function(FunctionType type);
 
 	void declare_variable();
 	void define_variable(uint8_t global)const;
@@ -173,7 +176,7 @@ private:
 	bool check(TokenType type)const noexcept;
 	void consume(TokenType type, std::string_view message);
 	bool match(TokenType type);
-	ObjFunction* end_compiler()const;
+	ObjFunction* end_compiler();
 
 	Chunk& current_chunk()const noexcept;
 

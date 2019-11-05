@@ -251,13 +251,23 @@ void Compilation::while_statement()
 
 void Compilation::declaration()
 {
-	if (match(TokenType::Var))
+	if (match(TokenType::Fun))
+		fun_declaration();
+	else if (match(TokenType::Var))
 		var_declaration();
 	else
 		statement();
 
 	if (parser.panic_mode)
 		synchronize();
+}
+
+void Compilation::fun_declaration()
+{
+	auto global = parse_variable("Expect function name.");
+	mark_initializied();
+	function(FunctionType::Function);
+	define_variable(global);
 }
 
 void Compilation::var_declaration()
@@ -270,6 +280,32 @@ void Compilation::var_declaration()
 
 	consume(TokenType::Semicolon, "Expect ';' after variable declaration.");
 	define_variable(global);
+}
+
+void Compilation::function(FunctionType type)
+{
+	init_compiler(type);
+	begin_scope();
+
+	consume(TokenType::LeftParen, "Expect '(' after function name.");
+	if (!check(TokenType::RightParen))
+	{
+		do
+		{
+			current->function->arity++;
+			if (current->function->arity > 255)
+				error_at_current("Cannot have more than 255 parameters.");
+			auto param_count = parse_variable("Expect parameter name.");
+			define_variable(param_count);
+		} while (match(TokenType::Comma));
+	}
+	consume(TokenType::RightParen, "Expect ')' after parameters.");
+
+	consume(TokenType::LeftBrace, "Expect '{' before function body.");
+	block();
+
+	auto function = end_compiler();
+	emit_bytes(OpCode::Constant, make_constant(function));
 }
 
 void Compilation::declare_variable()
@@ -370,9 +406,14 @@ uint8_t Compilation::parse_variable(std::string_view error)
 
 void Compilation::init_compiler(FunctionType type)
 {
-	current = std::make_unique<Compiler>();
+	auto compiler = std::make_unique<Compiler>();
+	compiler->enclosing = std::move(current);
+	current = std::move(compiler);
 	current->function = create_obj_function(vm);
 	current->type = type;
+
+	if (type != FunctionType::Script)
+		current->function->name = create_obj_string(parser.previous.text, vm);
 
 	auto& local = current->locals.at(current->local_count++);
 	local.depth = 0;
@@ -410,6 +451,8 @@ void Compilation::end_scope() const
 
 void Compilation::mark_initializied() const
 {
+	if (current->scope_depth == 0) return;
+
 	current->locals.at(current->local_count - 1).depth = current->scope_depth;
 }
 
@@ -484,7 +527,7 @@ bool Compilation::match(TokenType type)
 	return true;
 }
 
-ObjFunction* Compilation::end_compiler() const
+ObjFunction* Compilation::end_compiler()
 {
 	emit_return();
 	auto function = current->function;
@@ -495,6 +538,8 @@ ObjFunction* Compilation::end_compiler() const
 			function->name == nullptr ? "<script>" : function->name->text());
 #endif // _DEBUG
 
+	std::unique_ptr<Compiler> temp = std::move(current->enclosing);
+	current = std::move(temp);
 	return function;
 }
 
