@@ -47,15 +47,15 @@ InterpretResult VM::run()
 	while (true)
 	{
 		auto& frame = frames.at(frame_count - 1);
-//#ifdef _DEBUG
-//		std::cout << "          ";
-//		for (size_t slot = 0; slot < stacktop; ++slot)
-//		{
-//			std::cout << "[ " << stack.at(slot) << " ]";
-//		}
-//		std::cout << '\n';
-//		disassemble_instruction(frame.chunk(), frame.ip);
-//#endif // _DEBUG
+		//#ifdef _DEBUG
+		//		std::cout << "          ";
+		//		for (size_t slot = 0; slot < stacktop; ++slot)
+		//		{
+		//			std::cout << "[ " << stack.at(slot) << " ]";
+		//		}
+		//		std::cout << '\n';
+		//		disassemble_instruction(frame.chunk(), frame.ip);
+		//#endif // _DEBUG
 
 		auto instruction = frame.read_byte();
 		switch (instruction)
@@ -178,6 +178,14 @@ InterpretResult VM::run()
 				frame.ip -= offset;
 				break;
 			}
+			case OpCode::Call:
+			{
+				auto arg_count = static_cast<uint8_t>(frame.read_byte());
+				if (!call_value(peek(arg_count), arg_count))
+					return InterpretResult::RuntimeError;
+				frame = frames.at(frame_count - 1);
+				break;
+			}
 			case OpCode::Return:
 				return InterpretResult::Ok;
 			default:
@@ -186,26 +194,51 @@ InterpretResult VM::run()
 	}
 }
 
+bool VM::call(const ObjFunction* function, uint8_t arg_count)
+{
+	auto& frame = frames.at(frame_count++);
+	frame.function = function;
+	frame.ip = 0;
+	frame.slots = stacktop - arg_count - 1;
+	return true;
+}
+
+bool VM::call_value(const Value& callee, uint8_t arg_count)
+{
+	if (callee.is_obj())
+	{
+		switch (callee.as<Obj*>()->type)
+		{
+			case ObjType::Function:
+				return call(callee.as_function(), arg_count);
+			default:
+				break;
+		}
+	}
+	runtime_error("Can only call functions and classes.");
+	return false;
+}
+
 const Value& VM::peek(size_t distance) const
 {
-	return stack.at(stacktop - 1 - distance);
+	return stacktop[-1 - distance];
 }
 
 Value VM::pop()
 {
 	stacktop--;
-	return stack.at(stacktop);
+	return *stacktop;
 }
 
 void VM::push(Value value)
 {
-	stack.at(stacktop) = std::move(value);
+	*stacktop = std::move(value);
 	stacktop++;
 }
 
 void VM::reset_stack() noexcept
 {
-	stacktop = 0;
+	stacktop = stack.data();
 	frame_count = 0;
 }
 

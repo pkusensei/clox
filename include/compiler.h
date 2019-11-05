@@ -89,6 +89,7 @@ private:
 	void expression();
 	void and_([[maybe_unused]] bool can_assign);
 	void binary([[maybe_unused]] bool can_assign);
+	void call([[maybe_unused]] bool can_assign);
 	void grouping([[maybe_unused]] bool can_assign);
 	void literal([[maybe_unused]] bool can_assign);
 	void number([[maybe_unused]] bool can_assign);
@@ -110,6 +111,7 @@ private:
 	void var_declaration();
 	void function(FunctionType type);
 
+	uint8_t argument_list();
 	void declare_variable();
 	void define_variable(uint8_t global)const;
 	uint8_t identifier_constant(const Token& name);
@@ -187,42 +189,42 @@ private:
 
 public:
 	constexpr static ParseRule rules[40] = {
-	  { &Compilation::grouping, nullptr,    Precedence::None },       // TokenType::LEFT_PAREN      
+	  { &Compilation::grouping, &Compilation::call, Precedence::Call },       // TokenType::LEFT_PAREN      
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::RIGHT_PAREN     
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::LEFT_BRACE
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::RIGHT_BRACE     
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::COMMA           
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::DOT             
-	  { &Compilation::unary,    &Compilation::binary,  Precedence::Term },       // TokenType::MINUS           
-	  { nullptr,     &Compilation::binary,  Precedence::Term },       // TokenType::PLUS            
+	  { &Compilation::unary, &Compilation::binary, Precedence::Term },       // TokenType::MINUS           
+	  { nullptr,     &Compilation::binary, Precedence::Term },       // TokenType::PLUS            
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::SEMICOLON       
 	  { nullptr,     &Compilation::binary,  Precedence::Factor },     // TokenType::SLASH           
 	  { nullptr,     &Compilation::binary,  Precedence::Factor },     // TokenType::STAR            
-	  { &Compilation::unary,     nullptr,    Precedence::None },       // TokenType::BANG            
-	  { nullptr,     &Compilation::binary,    Precedence::Equality },       // TokenType::BANG_EQUAL      
+	  { &Compilation::unary,     nullptr,   Precedence::None },       // TokenType::BANG            
+	  { nullptr,     &Compilation::binary,  Precedence::Equality },       // TokenType::BANG_EQUAL      
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::EQUAL           
-	  { nullptr,     &Compilation::binary,    Precedence::Equality },       // TokenType::EQUAL_EQUAL     
-	  { nullptr,     &Compilation::binary,    Precedence::Comparison },       // TokenType::GREATER         
-	  { nullptr,     &Compilation::binary,    Precedence::Comparison },       // TokenType::GREATER_EQUAL   
-	  { nullptr,     &Compilation::binary,    Precedence::Comparison },       // TokenType::LESS            
-	  { nullptr,     &Compilation::binary,    Precedence::Comparison },       // TokenType::LESS_EQUAL      
-	  { &Compilation::variable,     nullptr,    Precedence::None },       // TokenType::IDENTIFIER      
-	  { &Compilation::string,     nullptr,    Precedence::None },       // TokenType::STRING          
+	  { nullptr,     &Compilation::binary,  Precedence::Equality },       // TokenType::EQUAL_EQUAL     
+	  { nullptr,     &Compilation::binary,  Precedence::Comparison },       // TokenType::GREATER         
+	  { nullptr,     &Compilation::binary,  Precedence::Comparison },       // TokenType::GREATER_EQUAL   
+	  { nullptr,     &Compilation::binary,  Precedence::Comparison },       // TokenType::LESS            
+	  { nullptr,     &Compilation::binary,  Precedence::Comparison },       // TokenType::LESS_EQUAL      
+	  { &Compilation::variable, nullptr,    Precedence::None },       // TokenType::IDENTIFIER      
+	  { &Compilation::string,   nullptr,    Precedence::None },       // TokenType::STRING          
 	  { &Compilation::number,   nullptr,    Precedence::None },       // TokenType::NUMBER          
 	  { nullptr,     &Compilation::and_,    Precedence::And },       // TokenType::AND             
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::CLASS           
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::ELSE            
-	  { &Compilation::literal,     nullptr,    Precedence::None },       // TokenType::FALSE           
+	  { &Compilation::literal,  nullptr,    Precedence::None },       // TokenType::FALSE           
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::FOR             
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::FUN             
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::IF              
-	  { &Compilation::literal,     nullptr,    Precedence::None },       // TokenType::NIL             
+	  { &Compilation::literal,  nullptr,    Precedence::None },       // TokenType::NIL             
 	  { nullptr,     &Compilation::or_,    Precedence::Or },       // TokenType::OR              
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::PRINT           
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::RETURN          
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::SUPER           
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::THIS            
-	  { &Compilation::literal,     nullptr,    Precedence::None },       // TokenType::TRUE            
+	  { &Compilation::literal,   nullptr,    Precedence::None },       // TokenType::TRUE            
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::VAR             
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::WHILE           
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::ERROR           

@@ -61,6 +61,12 @@ void Compilation::binary([[maybe_unused]] bool can_assign)
 	}
 }
 
+void Compilation::call([[maybe_unused]] bool can_assign)
+{
+	auto arg_count = argument_list();
+	emit_bytes(OpCode::Call, arg_count);
+}
+
 void Compilation::grouping([[maybe_unused]] bool can_assign)
 {
 	expression();
@@ -306,6 +312,23 @@ void Compilation::function(FunctionType type)
 
 	auto function = end_compiler();
 	emit_bytes(OpCode::Constant, make_constant(function));
+}
+
+uint8_t Compilation::argument_list()
+{
+	uint8_t arg_count = 0;
+	if (!check(TokenType::RightParen))
+	{
+		do
+		{
+			expression();
+			if (arg_count == 255)
+				error("Cannot have more than 255 arguments.");
+			arg_count++;
+		} while (match(TokenType::Comma));
+	}
+	consume(TokenType::RightParen, "Expect ')' after arguments.");
+	return arg_count;
 }
 
 void Compilation::declare_variable()

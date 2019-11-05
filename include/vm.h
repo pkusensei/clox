@@ -36,7 +36,7 @@ enum class InterpretResult
 
 struct CallFrame
 {
-	ObjFunction* function = nullptr;
+	const ObjFunction* function = nullptr;
 	size_t ip = 0; // index at function->chunk.code
 	Value* slots = nullptr;  // pointer to VM::stack
 
@@ -54,7 +54,7 @@ struct VM
 	size_t frame_count = 0;
 	std::unique_ptr<Obj, ObjDeleter> objects = nullptr;
 	std::array<Value, STACK_MAX> stack = {};
-	size_t stacktop = 0;
+	Value* stacktop = nullptr;
 	std::map<ObjString*, Value> globals;
 	std::set<ObjString*> strings;
 
@@ -63,6 +63,9 @@ struct VM
 
 private:
 	InterpretResult run();
+
+	bool call(const ObjFunction* function, uint8_t arg_count);
+	bool call_value(const Value& callee, uint8_t arg_count);
 
 	const Value& peek(size_t distance)const;
 	Value pop();
