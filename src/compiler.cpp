@@ -555,14 +555,13 @@ ObjFunction* Compilation::end_compiler()
 	emit_return();
 	auto function = current->function;
 
-#ifdef _DEBUG
-	if (!parser.had_error)
-		disassemble_chunk(current_chunk(),
-			function->name == nullptr ? "<script>" : function->name->text());
-#endif // _DEBUG
+//#ifdef _DEBUG
+//	if (!parser.had_error)
+//		disassemble_chunk(current_chunk(),
+//			function->name == nullptr ? "<script>" : function->name->text());
+//#endif // _DEBUG
 
-	std::unique_ptr<Compiler> temp = std::move(current->enclosing);
-	current = std::move(temp);
+	current = std::move(current->enclosing);
 	return function;
 }
 

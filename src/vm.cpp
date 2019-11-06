@@ -30,10 +30,7 @@ InterpretResult VM::interpret(std::string_view source)
 		return InterpretResult::CompileError;
 
 	push(function);
-	auto& frame = frames.at(frame_count++);
-	frame.function = function;
-	frame.ip = 0;
-	frame.slots = stack.data();
+	call(function, 0);
 	return run();
 }
 
@@ -47,15 +44,15 @@ InterpretResult VM::run()
 	while (true)
 	{
 		auto& frame = frames.at(frame_count - 1);
-		//#ifdef _DEBUG
-		//		std::cout << "          ";
-		//		for (size_t slot = 0; slot < stacktop; ++slot)
-		//		{
-		//			std::cout << "[ " << stack.at(slot) << " ]";
-		//		}
-		//		std::cout << '\n';
-		//		disassemble_instruction(frame.chunk(), frame.ip);
-		//#endif // _DEBUG
+//#ifdef _DEBUG
+//		std::cout << "          ";
+//		for (auto slot = stack.data(); slot < stacktop; ++slot)
+//		{
+//			std::cout << "[ " << *slot << " ]";
+//		}
+//		std::cout << '\n';
+//		disassemble_instruction(frame.chunk(), frame.ip);
+//#endif // _DEBUG
 
 		auto instruction = frame.read_byte();
 		switch (instruction)
@@ -196,6 +193,17 @@ InterpretResult VM::run()
 
 bool VM::call(const ObjFunction* function, uint8_t arg_count)
 {
+	if (arg_count != function->arity)
+	{
+		runtime_error("Expected ", function->arity, " arguments but got ",
+			static_cast<unsigned>(arg_count));
+		return false;
+	}
+	if (frame_count == FRAME_MAX)
+	{
+		runtime_error("Stack overflow");
+		return false;
+	}
 	auto& frame = frames.at(frame_count++);
 	frame.function = function;
 	frame.ip = 0;

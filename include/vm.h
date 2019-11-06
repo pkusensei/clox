@@ -78,9 +78,21 @@ private:
 	{
 		err_print(std::forward<Args>(args)...);
 		std::cerr << '\n';
-		const auto& frame = frames.at(frame_count - 1);
-		auto line = frame.chunk().lines.at(frame.ip);
-		std::cerr << "[line " << line << "] in script\n";
+		for (int i = frame_count - 1; i >= 0; i--)
+		{
+			const auto& frame = frames.at(i);
+			auto function = frame.function;
+			auto instruction = frame.ip - 1;
+			std::cerr << "[line " << function->chunk.lines.at(instruction);
+			std::cerr << "] in ";
+			if (function->name == nullptr)
+				std::cerr << "script\n";
+			else
+				std::cerr << function->name->text() << "()\n";
+		}
+		//const auto& frame = frames.at(frame_count - 1);
+		//auto line = frame.chunk().lines.at(frame.ip);
+		//std::cerr << "[line " << line << "] in script\n";
 		reset_stack();
 	}
 
