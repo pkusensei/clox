@@ -171,7 +171,7 @@ private:
 		return current_chunk().count() - 2;
 	}
 	void emit_loop(size_t loop_start);
-	void emit_return()const { emit_byte(OpCode::Return); }
+	void emit_return()const;
 	void patch_jump(size_t offset);
 
 	void advance();

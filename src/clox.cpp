@@ -44,27 +44,30 @@ void repl(Clox::VM& vm)
 
 int run_file(Clox::VM& vm, fs::path path)
 {
+	std::string source;
+
 	try
 	{
 		std::ifstream file(path);
 		std::stringstream buffer;
 		buffer << file.rdbuf();
-		std::string source = buffer.str();
-		auto result = vm.interpret(source);
-		switch (result)
-		{
-			case Clox::InterpretResult::CompileError:
-				return 65;
-			case Clox::InterpretResult::RuntimeError:
-				return 70;
-			case Clox::InterpretResult::Ok:
-			default:
-				return 0;
-		}
+		source = buffer.str();
 	} catch (...)
 	{
 		std::cout << "Could not open or read file \"" << path << "\".\n";
 		return 74;
+	}
+
+	auto result = vm.interpret(source);
+	switch (result)
+	{
+		case Clox::InterpretResult::CompileError:
+			return 65;
+		case Clox::InterpretResult::RuntimeError:
+			return 70;
+		case Clox::InterpretResult::Ok:
+		default:
+			return 0;
 	}
 }
 

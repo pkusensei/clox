@@ -59,7 +59,7 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset)
 		std::cout << std::setfill(' ') << std::setw(4) << chunk.lines.at(offset) << ' ';
 	}
 
-	auto instruction = chunk.code.at(offset);
+	auto instruction = static_cast<OpCode>(chunk.code.at(offset));
 	switch (instruction)
 	{
 		case OpCode::Call:

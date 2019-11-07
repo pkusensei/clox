@@ -41,25 +41,26 @@ VM::VM()
 
 InterpretResult VM::run()
 {
+	auto* frame = &frames.at(frame_count - 1);
+
 	while (true)
 	{
-		auto& frame = frames.at(frame_count - 1);
-//#ifdef _DEBUG
-//		std::cout << "          ";
-//		for (auto slot = stack.data(); slot < stacktop; ++slot)
-//		{
-//			std::cout << "[ " << *slot << " ]";
-//		}
-//		std::cout << '\n';
-//		disassemble_instruction(frame.chunk(), frame.ip);
-//#endif // _DEBUG
+		//#ifdef _DEBUG
+		//		std::cout << "          ";
+		//		for (auto slot = stack.data(); slot < stacktop; ++slot)
+		//		{
+		//			std::cout << "[ " << *slot << " ]";
+		//		}
+		//		std::cout << '\n';
+		//		disassemble_instruction(frame.chunk(), frame.ip);
+		//#endif // _DEBUG
 
-		auto instruction = frame.read_byte();
+		auto instruction = static_cast<OpCode>(frame->read_byte());
 		switch (instruction)
 		{
 			case OpCode::Constant:
 			{
-				auto&& constant = frame.read_constant();
+				auto&& constant = frame->read_constant();
 				push(constant);
 				break;
 			}
@@ -69,19 +70,19 @@ InterpretResult VM::run()
 			case OpCode::Pop: pop(); break;
 			case OpCode::GetLocal:
 			{
-				auto slot = static_cast<size_t>(frame.read_byte());
-				push(frame.slots[slot]);
+				auto slot = static_cast<size_t>(frame->read_byte());
+				push(frame->slots[slot]);
 				break;
 			}
 			case OpCode::SetLocal:
 			{
-				auto slot = static_cast<size_t>(frame.read_byte());
-				frame.slots[slot] = peek(0);
+				auto slot = static_cast<size_t>(frame->read_byte());
+				frame->slots[slot] = peek(0);
 				break;
 			}
 			case OpCode::GetGlobal:
 			{
-				auto name = frame.read_string();
+				auto name = frame->read_string();
 				try
 				{
 					auto& value = globals.at(name);
@@ -95,14 +96,14 @@ InterpretResult VM::run()
 			}
 			case OpCode::DefineGlobal:
 			{
-				auto name = frame.read_string();
+				auto name = frame->read_string();
 				globals.insert_or_assign(name, peek(0));
 				pop();
 				break;
 			}
 			case OpCode::SetGlobal:
 			{
-				auto name = frame.read_string();
+				auto name = frame->read_string();
 				try
 				{
 					globals.at(name) = peek(0);
@@ -158,33 +159,45 @@ InterpretResult VM::run()
 				break;
 			case OpCode::Jump:
 			{
-				auto offset = frame.read_short();
-				frame.ip += offset;
+				auto offset = frame->read_short();
+				frame->ip += offset;
 				break;
 			}
 			case OpCode::JumpIfFalse:
 			{
-				auto offset = frame.read_short();
+				auto offset = frame->read_short();
 				if (is_falsey(peek(0)))
-					frame.ip += offset;
+					frame->ip += offset;
 				break;
 			}
 			case OpCode::Loop:
 			{
-				auto offset = frame.read_short();
-				frame.ip -= offset;
+				auto offset = frame->read_short();
+				frame->ip -= offset;
 				break;
 			}
 			case OpCode::Call:
 			{
-				auto arg_count = static_cast<uint8_t>(frame.read_byte());
+				auto arg_count = static_cast<uint8_t>(frame->read_byte());
 				if (!call_value(peek(arg_count), arg_count))
 					return InterpretResult::RuntimeError;
-				frame = frames.at(frame_count - 1);
+				frame = &frames.at(frame_count - 1);
 				break;
 			}
 			case OpCode::Return:
-				return InterpretResult::Ok;
+			{
+				auto result = pop();
+				frame_count--;
+				if (frame_count == 0)
+				{
+					pop();
+					return InterpretResult::Ok;
+				}
+				stacktop = frame->slots;
+				push(result);
+				frame = &frames.at(frame_count - 1);
+				break;
+			}
 			default:
 				break;
 		}
@@ -250,7 +263,7 @@ void VM::reset_stack() noexcept
 	frame_count = 0;
 }
 
-OpCode CallFrame::read_byte()
+uint8_t CallFrame::read_byte()
 {
 	auto code = chunk().code.at(ip);
 	ip++;
@@ -259,7 +272,7 @@ OpCode CallFrame::read_byte()
 
 Value CallFrame::read_constant()
 {
-	return chunk().constants.values.at(static_cast<size_t>(read_byte()));
+	return chunk().constants.values.at(read_byte());
 }
 
 uint16_t CallFrame::read_short()

@@ -47,7 +47,7 @@ constexpr bool opcode_trait = std::is_same_v<uint8_t, T> || std::is_same_v<OpCod
 
 struct Chunk
 {
-	std::vector<OpCode> code;
+	std::vector<uint8_t> code;
 	std::vector<size_t> lines;
 	ValueArray constants;
 
@@ -65,7 +65,7 @@ struct Chunk
 	typename std::enable_if_t<opcode_trait<T>, void>
 		write(T byte, size_t line)
 	{
-		code.push_back(static_cast<OpCode>(byte));
+		code.push_back(static_cast<uint8_t>(byte));
 		lines.push_back(line);
 	}
 };

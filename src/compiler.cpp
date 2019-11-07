@@ -505,6 +505,12 @@ void Compilation::emit_loop(size_t loop_start)
 	emit_byte(static_cast<uint8_t>(offset & 0xff));
 }
 
+void Compilation::emit_return() const
+{
+	emit_byte(OpCode::Nil);
+	emit_byte(OpCode::Return);
+}
+
 void Compilation::patch_jump(size_t offset)
 {
 	auto jump = current_chunk().count() - offset - 2;
@@ -512,8 +518,8 @@ void Compilation::patch_jump(size_t offset)
 	if (jump > UINT16_MAX)
 		error("Too much code to jump over.");
 
-	current_chunk().code.at(offset) = static_cast<OpCode>((jump >> 8) & 0xff);
-	current_chunk().code.at(offset + 1) = static_cast<OpCode>(jump & 0xff);
+	current_chunk().code.at(offset) = static_cast<uint8_t>((jump >> 8) & 0xff);
+	current_chunk().code.at(offset + 1) = static_cast<uint8_t>(jump & 0xff);
 }
 
 void Compilation::advance()

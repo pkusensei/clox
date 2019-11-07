@@ -40,7 +40,7 @@ struct CallFrame
 	size_t ip = 0; // index at function->chunk.code
 	Value* slots = nullptr;  // pointer to VM::stack
 
-	OpCode read_byte();
+	uint8_t read_byte();
 	Value read_constant();
 	uint16_t read_short();
 	ObjString* read_string();
@@ -83,16 +83,13 @@ private:
 			const auto& frame = frames.at(i);
 			auto function = frame.function;
 			auto instruction = frame.ip - 1;
-			std::cerr << "[line " << function->chunk.lines.at(instruction);
-			std::cerr << "] in ";
+			auto line = function->chunk.lines.at(instruction);
+			std::cerr << "[line " << line << "] in ";
 			if (function->name == nullptr)
 				std::cerr << "script\n";
 			else
 				std::cerr << function->name->text() << "()\n";
 		}
-		//const auto& frame = frames.at(frame_count - 1);
-		//auto line = frame.chunk().lines.at(frame.ip);
-		//std::cerr << "[line " << line << "] in script\n";
 		reset_stack();
 	}
 
