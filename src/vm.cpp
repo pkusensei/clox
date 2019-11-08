@@ -1,5 +1,7 @@
 #include "vm.h"
 
+#include <chrono>
+
 #include "compiler.h"
 #include "debug.h"
 #include "object_t.h"
@@ -23,6 +25,12 @@ constexpr bool is_falsey(const Value& value)
 		(value.is_bool() && !value.as<bool>());
 }
 
+Value clock_native([[maybe_unused]] uint8_t arg_count, [[maybe_unused]] Value* args)noexcept
+{
+	auto tp = std::chrono::high_resolution_clock::now().time_since_epoch();
+	return std::chrono::duration<double>(tp).count();
+}
+
 InterpretResult VM::interpret(std::string_view source)
 {
 	auto function = Compilation::compile(source, *this);
@@ -37,6 +45,8 @@ InterpretResult VM::interpret(std::string_view source)
 VM::VM()
 {
 	reset_stack();
+
+	define_native("clock", clock_native);
 }
 
 InterpretResult VM::run()
@@ -232,12 +242,29 @@ bool VM::call_value(const Value& callee, uint8_t arg_count)
 		{
 			case ObjType::Function:
 				return call(callee.as_function(), arg_count);
+			case ObjType::Native:
+			{
+				auto native = callee.as_native()->function;
+				auto result = native(arg_count, stacktop - arg_count);
+				stacktop -= arg_count + 1;
+				push(result);
+				return true;
+			}
 			default:
 				break;
 		}
 	}
 	runtime_error("Can only call functions and classes.");
 	return false;
+}
+
+void VM::define_native(std::string_view name, NativeFn function)
+{
+	push(create_obj_string(name, *this));
+	push(create_obj_native(function, *this));
+	globals.insert_or_assign(stack.at(0).as_string(), stack.at(1));
+	pop();
+	pop();
 }
 
 const Value& VM::peek(size_t distance) const

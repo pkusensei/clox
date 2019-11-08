@@ -9,6 +9,7 @@ namespace Clox {
 enum class ObjType;
 struct Obj;
 struct ObjFunction;
+struct ObjNative;
 struct ObjString;
 
 struct Value
@@ -35,8 +36,10 @@ struct Value
 
 	bool is_obj_type(ObjType type)const;
 	bool is_function()const;
+	bool is_native()const;
 	bool is_string()const;
 	ObjFunction* as_function()const;
+	ObjNative* as_native()const;
 	ObjString* as_string()const;
 };
 

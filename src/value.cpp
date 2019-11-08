@@ -36,6 +36,11 @@ bool Value::is_function() const
 	return is_obj_type(ObjType::Function);
 }
 
+bool Value::is_native() const
+{
+	return is_obj_type(ObjType::Native);
+}
+
 bool Value::is_string() const
 {
 	return is_obj_type(ObjType::String);
@@ -46,6 +51,13 @@ ObjFunction* Value::as_function() const
 	if (!is_obj_type(ObjType::Function))
 		throw std::invalid_argument("Value is not a function.");
 	return static_cast<ObjFunction*>(as<Obj*>());
+}
+
+ObjNative* Value::as_native() const
+{
+	if (!is_obj_type(ObjType::Native))
+		throw std::invalid_argument("Value is not a native fn.");
+	return static_cast<ObjNative*>(as<Obj*>());
 }
 
 ObjString* Value::as_string() const

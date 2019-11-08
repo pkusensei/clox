@@ -104,6 +104,7 @@ private:
 	void for_statement();
 	void if_statement();
 	void print_statement();
+	void return_statement();
 	void while_statement();
 
 	void declaration();

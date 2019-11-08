@@ -136,6 +136,8 @@ void Compilation::statement()
 		if_statement();
 	else if (match(TokenType::Print))
 		print_statement();
+	else if (match(TokenType::Return))
+		return_statement();
 	else if (match(TokenType::While))
 		while_statement();
 	else if (match(TokenType::LeftBrace))
@@ -235,6 +237,21 @@ void Compilation::print_statement()
 	expression();
 	consume(TokenType::Semicolon, "Expect ';' after value.");
 	emit_byte(OpCode::Print);
+}
+
+void Compilation::return_statement()
+{
+	if (current->type == FunctionType::Script)
+		error("Cannot return from top-level code.");
+
+	if (match(TokenType::Semicolon))
+		emit_return();
+	else
+	{
+		expression();
+		consume(TokenType::Semicolon, "Expect ';' after return value.");
+		emit_byte(OpCode::Return);
+	}
 }
 
 void Compilation::while_statement()
@@ -561,11 +578,11 @@ ObjFunction* Compilation::end_compiler()
 	emit_return();
 	auto function = current->function;
 
-//#ifdef _DEBUG
-//	if (!parser.had_error)
-//		disassemble_chunk(current_chunk(),
-//			function->name == nullptr ? "<script>" : function->name->text());
-//#endif // _DEBUG
+	//#ifdef _DEBUG
+	//	if (!parser.had_error)
+	//		disassemble_chunk(current_chunk(),
+	//			function->name == nullptr ? "<script>" : function->name->text());
+	//#endif // _DEBUG
 
 	current = std::move(current->enclosing);
 	return function;

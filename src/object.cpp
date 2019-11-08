@@ -11,6 +11,9 @@ void ObjDeleter::operator()(Obj* ptr) const
 		case ObjType::Function:
 			static_cast<ObjFunction*>(ptr)->~ObjFunction();
 			break;
+		case ObjType::Native:
+			static_cast<ObjNative*>(ptr)->~ObjNative();
+			break;
 		case ObjType::String:
 			static_cast<ObjString*>(ptr)->~ObjString();
 			break;
@@ -25,6 +28,9 @@ std::ostream& operator<<(std::ostream& out, const Obj& obj)
 	{
 		case ObjType::Function:
 			out << static_cast<const ObjFunction&>(obj);
+			break;
+		case ObjType::Native:
+			out << static_cast<const ObjNative&>(obj);
 			break;
 		case ObjType::String:
 			out << static_cast<const ObjString&>(obj);
@@ -54,6 +60,19 @@ std::ostream& operator<<(std::ostream& out, const ObjFunction& f)
 ObjFunction* create_obj_function(VM& vm)
 {
 	auto p = new ObjFunction();
+	register_obj(p, vm);
+	return p;
+}
+
+std::ostream& operator<<(std::ostream& out, [[maybe_unused]] const ObjNative& s)
+{
+	out << "<native fn>";
+	return out;
+}
+
+ObjNative* create_obj_native(NativeFn func, VM& vm)
+{
+	auto p = new ObjNative(func);
 	register_obj(p, vm);
 	return p;
 }

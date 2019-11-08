@@ -66,6 +66,7 @@ private:
 
 	bool call(const ObjFunction* function, uint8_t arg_count);
 	bool call_value(const Value& callee, uint8_t arg_count);
+	void define_native(std::string_view name, NativeFn function);
 
 	const Value& peek(size_t distance)const;
 	Value pop();

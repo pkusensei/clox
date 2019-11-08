@@ -13,6 +13,7 @@ struct VM;
 enum class ObjType
 {
 	Function,
+	Native,
 	String
 };
 
@@ -32,10 +33,7 @@ struct Obj
 	}
 
 protected:
-	constexpr Obj(ObjType type) noexcept
-		:type(type)
-	{
-	}
+	constexpr Obj(ObjType type) noexcept :type(type) {}
 };
 
 std::ostream& operator<<(std::ostream& out, const Obj& obj);
@@ -60,6 +58,21 @@ struct ObjFunction final : public ObjT<ObjFunction>
 
 std::ostream& operator<<(std::ostream& out, const ObjFunction& f);
 ObjFunction* create_obj_function(VM& vm);
+
+using NativeFn = Value(*)(uint8_t arg_count, Value * args);
+
+struct ObjNative final :public ObjT<ObjNative>
+{
+	NativeFn function;
+
+	constexpr ObjNative(NativeFn func)noexcept
+		:ObjT(ObjType::Native), function(func)
+	{
+	}
+};
+
+std::ostream& operator<<(std::ostream& out, const ObjNative& s);
+ObjNative* create_obj_native(NativeFn func, VM& vm);
 
 struct ObjString final :public ObjT<ObjString>
 {
