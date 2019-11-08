@@ -22,6 +22,8 @@ enum class OpCode :uint8_t
 	GetGlobal,
 	DefineGlobal,
 	SetGlobal,
+	GetUpvalue,
+	SetUpvalue,
 	Equal,
 	Greater,
 	Less,
@@ -36,6 +38,8 @@ enum class OpCode :uint8_t
 	JumpIfFalse,
 	Loop,
 	Call,
+	Closure,
+	CloseUpvalue,
 	Return
 };
 

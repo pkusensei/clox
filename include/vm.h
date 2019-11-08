@@ -36,7 +36,7 @@ enum class InterpretResult
 
 struct CallFrame
 {
-	const ObjFunction* function = nullptr;
+	const ObjClosure* closure = nullptr;
 	size_t ip = 0; // index at function->chunk.code
 	Value* slots = nullptr;  // pointer to VM::stack
 
@@ -45,18 +45,19 @@ struct CallFrame
 	uint16_t read_short();
 	ObjString* read_string();
 
-	const Chunk& chunk()const noexcept { return function->chunk; }
+	const Chunk& chunk()const noexcept { return closure->function->chunk; }
 };
 
 struct VM
 {
-	std::array<CallFrame, FRAME_MAX> frames = {};
+	std::array<CallFrame, FRAME_MAX> frames;
 	size_t frame_count = 0;
-	std::unique_ptr<Obj, ObjDeleter> objects = nullptr;
-	std::array<Value, STACK_MAX> stack = {};
+	std::array<Value, STACK_MAX> stack;
 	Value* stacktop = nullptr;
 	std::map<ObjString*, Value> globals;
 	std::set<ObjString*> strings;
+	ObjUpvalue* open_upvalues = nullptr;
+	std::unique_ptr<Obj, ObjDeleter> objects = nullptr;
 
 	InterpretResult interpret(std::string_view source);
 	VM();
@@ -64,7 +65,9 @@ struct VM
 private:
 	InterpretResult run();
 
-	bool call(const ObjFunction* function, uint8_t arg_count);
+	ObjUpvalue* captured_upvalue(Value* local);
+	void close_upvalues(Value* last);
+	bool call(const ObjClosure* closure, uint8_t arg_count);
 	bool call_value(const Value& callee, uint8_t arg_count);
 	void define_native(std::string_view name, NativeFn function);
 
@@ -82,7 +85,7 @@ private:
 		for (int i = frame_count - 1; i >= 0; i--)
 		{
 			const auto& frame = frames.at(i);
-			auto function = frame.function;
+			auto function = frame.closure->function;
 			auto instruction = frame.ip - 1;
 			auto line = function->chunk.lines.at(instruction);
 			std::cerr << "[line " << line << "] in ";

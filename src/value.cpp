@@ -31,6 +31,11 @@ bool Value::is_obj_type(ObjType type) const
 	return false;
 }
 
+bool Value::is_closure() const
+{
+	return is_obj_type(ObjType::Closure);
+}
+
 bool Value::is_function() const
 {
 	return is_obj_type(ObjType::Function);
@@ -44,6 +49,13 @@ bool Value::is_native() const
 bool Value::is_string() const
 {
 	return is_obj_type(ObjType::String);
+}
+
+ObjClosure* Value::as_closure() const
+{
+	if (!is_obj_type(ObjType::Closure))
+		throw std::invalid_argument("Value is not a closure.");
+	return static_cast<ObjClosure*>(as<Obj*>());
 }
 
 ObjFunction* Value::as_function() const

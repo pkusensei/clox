@@ -16,6 +16,8 @@ std::string_view nameof(OpCode code)
 		case OpCode::GetGlobal: return "OpGetGlobal";
 		case OpCode::DefineGlobal: return "OpDefineGlobal";
 		case OpCode::SetGlobal: return "OpSetGlobal";
+		case OpCode::GetUpvalue: return "OpGetUpvalue";
+		case OpCode::SetUpvalue: return "OpSetUpvalue";
 		case OpCode::Equal: return "OpEqual";
 		case OpCode::Greater: return "OpGreater";
 		case OpCode::Less: return "OpLess";
@@ -30,6 +32,8 @@ std::string_view nameof(OpCode code)
 		case OpCode::JumpIfFalse: return "OpJumpIfFalse";
 		case OpCode::Loop: return "OpLoop";
 		case OpCode::Call: return "OpCall";
+		case OpCode::Closure: return "OpClosure";
+		case OpCode::CloseUpvalue: return "OpCloseUpvalue";
 		case OpCode::Return: return "OpReturn";
 		default:
 			throw std::invalid_argument("Unexpected OpCode: nameof");

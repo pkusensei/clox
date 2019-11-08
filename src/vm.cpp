@@ -19,16 +19,16 @@ do{\
 		push(a op b); \
 } while (false)
 
-constexpr bool is_falsey(const Value& value)
-{
-	return value.is_nil() ||
-		(value.is_bool() && !value.as<bool>());
-}
-
 Value clock_native([[maybe_unused]] uint8_t arg_count, [[maybe_unused]] Value* args)noexcept
 {
 	auto tp = std::chrono::high_resolution_clock::now().time_since_epoch();
 	return std::chrono::duration<double>(tp).count();
+}
+
+constexpr bool is_falsey(const Value& value)
+{
+	return value.is_nil() ||
+		(value.is_bool() && !value.as<bool>());
 }
 
 InterpretResult VM::interpret(std::string_view source)
@@ -38,7 +38,9 @@ InterpretResult VM::interpret(std::string_view source)
 		return InterpretResult::CompileError;
 
 	push(function);
-	call(function, 0);
+	auto closure = create_obj_closure(function, *this);
+	pop();
+	call_value(closure, 0);
 	return run();
 }
 
@@ -62,7 +64,7 @@ InterpretResult VM::run()
 		//			std::cout << "[ " << *slot << " ]";
 		//		}
 		//		std::cout << '\n';
-		//		disassemble_instruction(frame.chunk(), frame.ip);
+		//		disassemble_instruction(frame->chunk(), frame->ip);
 		//#endif // _DEBUG
 
 		auto instruction = static_cast<OpCode>(frame->read_byte());
@@ -122,6 +124,18 @@ InterpretResult VM::run()
 					runtime_error("Undefined variable ", name->text());
 					return InterpretResult::RuntimeError;
 				}
+				break;
+			}
+			case OpCode::GetUpvalue:
+			{
+				auto slot = frame->read_byte();
+				push(*frame->closure->upvalues.at(slot)->location);
+				break;
+			}
+			case OpCode::SetUpvalue:
+			{
+				auto slot = frame->read_byte();
+				*frame->closure->upvalues.at(slot)->location = peek(0);
 				break;
 			}
 			case OpCode::Equal:
@@ -194,9 +208,30 @@ InterpretResult VM::run()
 				frame = &frames.at(frame_count - 1);
 				break;
 			}
+			case OpCode::Closure:
+			{
+				auto function = frame->read_constant().as_function();
+				auto closure = create_obj_closure(function, *this);
+				push(closure);
+				for (size_t i = 0; i < closure->upvalue_count(); i++)
+				{
+					auto is_local = frame->read_byte();
+					auto index = frame->read_byte();
+					if (is_local > 0)
+						closure->upvalues.at(i) = captured_upvalue(frame->slots + index);
+					else
+						closure->upvalues.at(i) = frame->closure->upvalues.at(index);
+				}
+				break;
+			}
+			case OpCode::CloseUpvalue:
+				close_upvalues(stacktop - 1);
+				pop();
+				break;
 			case OpCode::Return:
 			{
 				auto result = pop();
+				close_upvalues(frame->slots);
 				frame_count--;
 				if (frame_count == 0)
 				{
@@ -214,11 +249,45 @@ InterpretResult VM::run()
 	}
 }
 
-bool VM::call(const ObjFunction* function, uint8_t arg_count)
+ObjUpvalue* VM::captured_upvalue(Value* local)
 {
-	if (arg_count != function->arity)
+	ObjUpvalue* prev_upvalue = nullptr;
+	ObjUpvalue* upvalue = open_upvalues;
+
+	while (upvalue != nullptr && upvalue->location > local)
 	{
-		runtime_error("Expected ", function->arity, " arguments but got ",
+		prev_upvalue = upvalue;
+		upvalue = upvalue->next;
+	}
+	if (upvalue != nullptr && upvalue->location == local)
+		return upvalue;
+
+	auto created = create_obj_upvalue(local, *this);
+	created->next = upvalue;
+	if (prev_upvalue == nullptr)
+		open_upvalues = created;
+	else
+		prev_upvalue->next = created;
+
+	return created;
+}
+
+void VM::close_upvalues(Value* last)
+{
+	while (open_upvalues != nullptr && open_upvalues->location >= last)
+	{
+		auto upvalue = open_upvalues;
+		upvalue->closed = *upvalue->location;
+		upvalue->location = &upvalue->closed;
+		open_upvalues = upvalue->next;
+	}
+}
+
+bool VM::call(const ObjClosure* closure, uint8_t arg_count)
+{
+	if (arg_count != closure->function->arity)
+	{
+		runtime_error("Expected ", closure->function->arity, " arguments but got ",
 			static_cast<unsigned>(arg_count));
 		return false;
 	}
@@ -228,7 +297,7 @@ bool VM::call(const ObjFunction* function, uint8_t arg_count)
 		return false;
 	}
 	auto& frame = frames.at(frame_count++);
-	frame.function = function;
+	frame.closure = closure;
 	frame.ip = 0;
 	frame.slots = stacktop - arg_count - 1;
 	return true;
@@ -240,8 +309,8 @@ bool VM::call_value(const Value& callee, uint8_t arg_count)
 	{
 		switch (callee.as<Obj*>()->type)
 		{
-			case ObjType::Function:
-				return call(callee.as_function(), arg_count);
+			case ObjType::Closure:
+				return call(callee.as_closure(), arg_count);
 			case ObjType::Native:
 			{
 				auto native = callee.as_native()->function;

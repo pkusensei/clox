@@ -8,6 +8,7 @@ namespace Clox {
 
 enum class ObjType;
 struct Obj;
+struct ObjClosure;
 struct ObjFunction;
 struct ObjNative;
 struct ObjString;
@@ -18,10 +19,10 @@ struct Value
 
 	var_t value;
 
-	constexpr Value(bool value) : value(value) {}
-	constexpr Value() : value(std::monostate()) {}
-	constexpr Value(double value) : value(value) {}
-	constexpr Value(Obj* obj) : value(obj) {}
+	constexpr Value(bool value) noexcept : value(value) {}
+	constexpr Value() noexcept : value(std::monostate()) {}
+	constexpr Value(double value) noexcept : value(value) {}
+	constexpr Value(Obj* obj) noexcept : value(obj) {}
 
 	constexpr bool is_bool()const noexcept { return std::holds_alternative<bool>(value); }
 	constexpr bool is_nil()const noexcept { return std::holds_alternative<std::monostate>(value); }
@@ -35,9 +36,11 @@ struct Value
 	}
 
 	bool is_obj_type(ObjType type)const;
+	bool is_closure()const;
 	bool is_function()const;
 	bool is_native()const;
 	bool is_string()const;
+	ObjClosure* as_closure()const;
 	ObjFunction* as_function()const;
 	ObjNative* as_native()const;
 	ObjString* as_string()const;

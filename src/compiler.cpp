@@ -21,7 +21,7 @@ ObjFunction* Compilation::compile(std::string_view source, VM& vm)
 	while (!cu.match(TokenType::Eof))
 		cu.declaration();
 
-	auto function = cu.end_compiler();
+	auto [function, done] = cu.end_compiler();
 	return cu.parser.had_error ? nullptr : function;
 }
 
@@ -327,8 +327,14 @@ void Compilation::function(FunctionType type)
 	consume(TokenType::LeftBrace, "Expect '{' before function body.");
 	block();
 
-	auto function = end_compiler();
-	emit_bytes(OpCode::Constant, make_constant(function));
+	auto [function, done] = end_compiler();
+	emit_bytes(OpCode::Closure, make_constant(function));
+
+	for (size_t i = 0; i < function->upvalue_count; i++)
+	{
+		emit_byte(static_cast<uint8_t>(done->upvalues.at(i).is_local ? 1 : 0));
+		emit_byte(done->upvalues.at(i).index);
+	}
 }
 
 uint8_t Compilation::argument_list()
@@ -385,16 +391,24 @@ uint8_t Compilation::identifier_constant(const Token& name)
 void Compilation::named_variable(const Token& name, bool can_assign)
 {
 	OpCode get_op, set_op;
-	auto arg = resolve_local(name);
+	auto arg = resolve_local(current, name);
 	if (arg.has_value())
 	{
 		get_op = OpCode::GetLocal;
 		set_op = OpCode::SetLocal;
 	} else
 	{
-		arg = identifier_constant(name);
-		get_op = OpCode::GetGlobal;
-		set_op = OpCode::SetGlobal;
+		arg = resolve_upvalue(current, name);
+		if (arg.has_value())
+		{
+			get_op = OpCode::GetUpvalue;
+			set_op = OpCode::SetUpvalue;
+		} else
+		{
+			arg = identifier_constant(name);
+			get_op = OpCode::GetGlobal;
+			set_op = OpCode::SetGlobal;
+		}
 	}
 	if (can_assign && match(TokenType::Equal))
 	{
@@ -457,6 +471,7 @@ void Compilation::init_compiler(FunctionType type)
 
 	auto& local = current->locals.at(current->local_count++);
 	local.depth = 0;
+	local.is_captured = false;
 	local.name.text = std::string_view();
 }
 
@@ -470,6 +485,26 @@ void Compilation::add_local(const Token& name)
 	auto& local = current->locals.at(current->local_count++);
 	local.name = name;
 	local.depth = -1;
+	local.is_captured = false;
+}
+
+uint8_t Compilation::add_upvalue(std::unique_ptr<Compiler>& compiler, uint8_t index, bool is_local)
+{
+	auto upvalue_count = compiler->function->upvalue_count;
+	for (size_t i = 0; i < upvalue_count; i++)
+	{
+		const auto& upvalue = compiler->upvalues.at(i);
+		if (upvalue.index == index && upvalue.is_local == is_local)
+			return i;
+	}
+	if (upvalue_count == UINT8_COUNT)
+	{
+		error("Too many closure variables in function.");
+		return 0;
+	}
+	compiler->upvalues.at(upvalue_count).is_local = is_local;
+	compiler->upvalues.at(upvalue_count).index = index;
+	return compiler->function->upvalue_count++;
 }
 
 void Compilation::begin_scope() const
@@ -484,7 +519,10 @@ void Compilation::end_scope() const
 	while (current->local_count > 0 &&
 		current->locals.at(current->local_count - 1).depth > current->scope_depth)
 	{
-		emit_byte(OpCode::Pop);
+		if (current->locals.at(current->local_count - 1).is_captured)
+			emit_byte(OpCode::CloseUpvalue);
+		else
+			emit_byte(OpCode::Pop);
 		current->local_count--;
 	}
 }
@@ -496,11 +534,11 @@ void Compilation::mark_initializied() const
 	current->locals.at(current->local_count - 1).depth = current->scope_depth;
 }
 
-std::optional<uint8_t> Compilation::resolve_local(const Token& name)
+std::optional<uint8_t> Compilation::resolve_local(std::unique_ptr<Compiler>& compiler, const Token& name)
 {
-	for (int i = current->local_count - 1; i >= 0; i--)
+	for (int i = compiler->local_count - 1; i >= 0; i--)
 	{
-		const auto& local = current->locals.at(i);
+		const auto& local = compiler->locals.at(i);
 		if (name.text == local.name.text)
 		{
 			if (local.depth == -1)
@@ -508,6 +546,24 @@ std::optional<uint8_t> Compilation::resolve_local(const Token& name)
 			return i;
 		}
 	}
+	return std::nullopt;
+}
+
+std::optional<uint8_t> Compilation::resolve_upvalue(std::unique_ptr<Compiler>& compiler, const Token& name)
+{
+	if (compiler->enclosing == nullptr) return std::nullopt;
+
+	auto local = resolve_local(compiler->enclosing, name);
+	if (local.has_value())
+	{
+		compiler->enclosing->locals.at(local.value()).is_captured = true;
+		return add_upvalue(compiler, local.value(), true);
+	}
+
+	auto upvalue = resolve_upvalue(compiler->enclosing, name);
+	if (upvalue.has_value())
+		return add_upvalue(compiler, upvalue.value(), false);
+
 	return std::nullopt;
 }
 
@@ -573,19 +629,22 @@ bool Compilation::match(TokenType type)
 	return true;
 }
 
-ObjFunction* Compilation::end_compiler()
+std::pair<ObjFunction*, std::unique_ptr<Compiler>> Compilation::end_compiler()
 {
 	emit_return();
 	auto function = current->function;
 
-	//#ifdef _DEBUG
-	//	if (!parser.had_error)
-	//		disassemble_chunk(current_chunk(),
-	//			function->name == nullptr ? "<script>" : function->name->text());
-	//#endif // _DEBUG
+#ifdef _DEBUG
+	if (!parser.had_error)
+		disassemble_chunk(current_chunk(),
+			function->name == nullptr ? "<script>" : function->name->text());
+#endif // _DEBUG
 
-	current = std::move(current->enclosing);
-	return function;
+	// return ended compiler out to Compilation::function
+	// so that it has access to array<upvalue>
+	std::unique_ptr<Compiler> done = std::move(current);
+	current = std::move(done->enclosing);
+	return std::make_pair(function, std::move(done));
 }
 
 Chunk& Compilation::current_chunk() const noexcept

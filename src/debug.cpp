@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <iostream>
 
+#include "object.h"
+
 namespace Clox {
 
 void disassemble_chunk(const Chunk& chunk, std::string_view name)
@@ -33,8 +35,8 @@ size_t constant_instruction(std::string_view name, const Chunk& chunk, size_t of
 
 size_t jump_instruction(std::string_view name, int sign, const Chunk& chunk, size_t offset)
 {
-	auto jump = static_cast<uint16_t>(static_cast<uint8_t>(chunk.code.at(offset + 1)) << 8);
-	jump |= static_cast<uint8_t>(chunk.code.at(offset + 2));
+	auto jump = static_cast<uint16_t>(chunk.code.at(offset + 1) << 8);
+	jump |= chunk.code.at(offset + 2);
 	std::cout << std::setfill(' ') << std::left << std::setw(16) << name << ' ';
 	std::cout << std::setw(4) << offset << " -> ";
 	std::cout << offset + 3 + sign * jump << '\n';
@@ -65,6 +67,8 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset)
 		case OpCode::Call:
 		case OpCode::GetLocal:
 		case OpCode::SetLocal:
+		case OpCode::GetUpvalue:
+		case OpCode::SetUpvalue:
 			return byte_instruction(nameof(instruction), chunk, offset);
 		case OpCode::Constant:
 		case OpCode::GetGlobal:
@@ -90,8 +94,29 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset)
 		case OpCode::Not:
 		case OpCode::Negate:
 		case OpCode::Print:
+		case OpCode::CloseUpvalue:
 		case OpCode::Return:
 			return simple_instruction(nameof(instruction), offset);
+		case OpCode::Closure:
+		{
+			offset++;
+			auto constant = chunk.code.at(offset++);
+			std::cout << std::setfill(' ') << std::left << std::setw(16) << nameof(OpCode::Closure) << ' ';
+			std::cout << std::setw(4) << static_cast<unsigned>(constant) << ' ';
+			std::cout << chunk.constants.values.at(constant) << '\n';
+
+			auto function = chunk.constants.values.at(constant).as_function();
+			for (size_t j = 0; j < function->upvalue_count; j++)
+			{
+				auto is_local = chunk.code.at(offset++);
+				auto index = chunk.code.at(offset++);
+				std::cout << std::setfill('0') << std::right << std::setw(4) << offset - 2;
+				std::cout << "      |                     ";
+				std::cout << (is_local > 0 ? "local" : "upvalue");
+				std::cout << ' ' << static_cast<unsigned>(index) << '\n';
+			}
+			return offset;
+		}
 		default:
 			std::cout << "Unknown OpCode " << instruction;
 			return offset + 1;

@@ -12,9 +12,11 @@ struct VM;
 
 enum class ObjType
 {
+	Closure,
 	Function,
 	Native,
-	String
+	String,
+	Upvalue
 };
 
 struct ObjDeleter
@@ -50,6 +52,7 @@ protected:
 struct ObjFunction final : public ObjT<ObjFunction>
 {
 	size_t arity = 0;
+	size_t upvalue_count = 0;
 	Chunk chunk;
 	ObjString* name = nullptr;
 
@@ -58,6 +61,25 @@ struct ObjFunction final : public ObjT<ObjFunction>
 
 std::ostream& operator<<(std::ostream& out, const ObjFunction& f);
 ObjFunction* create_obj_function(VM& vm);
+
+struct ObjUpvalue;
+struct ObjClosure final :public ObjT<ObjClosure>
+{
+	ObjFunction* const function;
+	std::vector<ObjUpvalue*> upvalues;
+
+	ObjClosure(ObjFunction* func)
+		:ObjT(ObjType::Closure), function(func)
+	{
+		for (size_t i = 0; i < function->upvalue_count; i++)
+			upvalues.push_back(nullptr);
+	}
+
+	size_t upvalue_count()const noexcept { return upvalues.size(); }
+};
+
+std::ostream& operator<<(std::ostream& out, const ObjClosure& s);
+ObjClosure* create_obj_closure(ObjFunction* func, VM& vm);
 
 using NativeFn = Value(*)(uint8_t arg_count, Value * args);
 
@@ -84,5 +106,20 @@ struct ObjString final :public ObjT<ObjString>
 
 std::ostream& operator<<(std::ostream& out, const ObjString& s);
 std::string operator+(const ObjString& lhs, const ObjString& rhs);
+
+struct ObjUpvalue final :public ObjT<ObjUpvalue>
+{
+	Value* location;
+	Value closed;
+	ObjUpvalue* next = nullptr;
+
+	constexpr ObjUpvalue(Value* slot)noexcept
+		:ObjT(ObjType::Upvalue), location(slot)
+	{
+	}
+};
+
+std::ostream& operator<<(std::ostream& out, const ObjUpvalue& s);
+ObjUpvalue* create_obj_upvalue(Value* slot, VM& vm);
 
 } //Clox

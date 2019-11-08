@@ -55,6 +55,13 @@ struct Local
 {
 	Token name;
 	int depth = -1;
+	bool is_captured = false;
+};
+
+struct Upvalue
+{
+	uint8_t index = 0;
+	bool is_local = false;
 };
 
 struct Compiler
@@ -63,8 +70,9 @@ struct Compiler
 	ObjFunction* function = nullptr;
 	FunctionType type = FunctionType::Script;
 
-	std::array<Local, UINT8_COUNT> locals = {};
+	std::array<Local, UINT8_COUNT> locals;
 	size_t local_count = 0;
+	std::array<Upvalue, UINT8_COUNT> upvalues;
 	int scope_depth = 0;
 };
 
@@ -122,10 +130,12 @@ private:
 
 	void init_compiler(FunctionType type);
 	void add_local(const Token& name);
+	uint8_t add_upvalue(std::unique_ptr<Compiler>& compiler, uint8_t index, bool is_local);
 	void begin_scope()const;
 	void end_scope()const;
 	void mark_initializied()const;
-	std::optional<uint8_t> resolve_local(const Token& name);
+	std::optional<uint8_t> resolve_local(std::unique_ptr<Compiler>& compiler, const Token& name);
+	std::optional<uint8_t> resolve_upvalue(std::unique_ptr<Compiler>& compiler, const Token& name);
 
 	template<typename T>
 	typename std::enable_if_t<std::is_convertible_v<T, Value>, uint8_t>
@@ -179,7 +189,7 @@ private:
 	bool check(TokenType type)const noexcept;
 	void consume(TokenType type, std::string_view message);
 	bool match(TokenType type);
-	ObjFunction* end_compiler();
+	std::pair<ObjFunction*, std::unique_ptr<Compiler>> end_compiler();
 
 	Chunk& current_chunk()const noexcept;
 
