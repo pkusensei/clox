@@ -42,12 +42,13 @@ struct Token
 
 struct Scanner
 {
-	const char* start;
-	const char* current;
+	size_t start = 0;
+	size_t current = 0;
 	size_t line = 1;
+	std::string_view source;
 
 	constexpr explicit Scanner(std::string_view source) noexcept
-		:start(source.data()), current(source.data())
+		:source(source)
 	{
 	}
 

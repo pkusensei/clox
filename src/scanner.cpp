@@ -57,7 +57,7 @@ Token Scanner::number()
 	if (peek() == '.' && std::isdigit(peek_next()))
 	{
 		advance();
-		while (std::isdigit(peek())) 
+		while (std::isdigit(peek()))
 			advance();
 	}
 
@@ -114,7 +114,7 @@ void Scanner::skip_whitespace()
 
 TokenType Scanner::identifier_type() const
 {
-	switch (start[0])
+	switch (source.at(start))
 	{
 		case 'a': return check_keyword(1, 2, "nd", TokenType::And);
 		case 'c': return check_keyword(1, 4, "lass", TokenType::Class);
@@ -122,7 +122,7 @@ TokenType Scanner::identifier_type() const
 		case 'f':
 			if (current - start > 1)
 			{
-				switch (start[1])
+				switch (source.at(start + 1))
 				{
 					case 'a': return check_keyword(2, 3, "lse", TokenType::False);
 					case 'o': return check_keyword(2, 1, "r", TokenType::For);
@@ -139,7 +139,7 @@ TokenType Scanner::identifier_type() const
 		case 't':
 			if (current - start > 1)
 			{
-				switch (start[1])
+				switch (source.at(start + 1))
 				{
 					case 'h': return check_keyword(2, 2, "is", TokenType::This);
 					case 'r': return check_keyword(2, 2, "ue", TokenType::True);
@@ -149,7 +149,6 @@ TokenType Scanner::identifier_type() const
 		case 'v': return check_keyword(1, 2, "ar", TokenType::Var);
 		case 'w': return check_keyword(1, 4, "hile", TokenType::While);
 		default:
-			std::cout << start[0];
 			break;
 	}
 	return TokenType::Identifier;
@@ -157,7 +156,7 @@ TokenType Scanner::identifier_type() const
 
 TokenType Scanner::check_keyword(size_t begin, size_t length, std::string_view rest, TokenType type) const
 {
-	auto name = std::string_view(start + begin, length);
+	auto name = source.substr(start + begin, length);
 	if (name == rest)
 		return type;
 	return TokenType::Identifier;
@@ -172,37 +171,39 @@ Token Scanner::error_token(std::string_view message) const noexcept
 Token Scanner::make_token(TokenType type) const noexcept
 {
 	size_t length = current - start;
-	return Token(type, std::string_view(start, length), line);
+	return Token(type, source.substr(start, length), line);
 }
 
 char Scanner::advance()
 {
 	current++;
-	return current[-1];
+	return source.at(current - 1);
 }
 
 bool Scanner::is_at_end() const noexcept
 {
-	return *current == '\0';
+	return current == source.length();
 }
 
 bool Scanner::match(char expected)
 {
 	if (is_at_end()) return false;
-	if (*current != expected) return false;
+	if (source.at(current) != expected) return false;
 	current++;
 	return true;
 }
 
 char Scanner::peek() const
 {
-	return *current;
+	if (is_at_end()) return '\0';
+	return source.at(current);
 }
 
 char Scanner::peek_next() const
 {
-	if (is_at_end()) return '\0';
-	return current[1];
+	if (is_at_end() || current + 1 == source.length())
+		return '\0';
+	return source.at(current + 1);
 }
 
 } //Clox

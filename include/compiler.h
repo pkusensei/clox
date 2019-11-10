@@ -95,15 +95,15 @@ struct Compilation
 private:
 
 	void expression();
-	void and_([[maybe_unused]] bool can_assign);
-	void binary([[maybe_unused]] bool can_assign);
-	void call([[maybe_unused]] bool can_assign);
-	void grouping([[maybe_unused]] bool can_assign);
-	void literal([[maybe_unused]] bool can_assign);
-	void number([[maybe_unused]] bool can_assign);
-	void or_([[maybe_unused]] bool can_assign);
-	void string([[maybe_unused]] bool can_assign);
-	void unary([[maybe_unused]] bool can_assign);
+	void and_(bool can_assign);
+	void binary(bool can_assign);
+	void call(bool can_assign);
+	void grouping(bool can_assign);
+	void literal(bool can_assign);
+	void number(bool can_assign);
+	void or_(bool can_assign);
+	void string(bool can_assign);
+	void unary(bool can_assign);
 	void variable(bool can_assign);
 
 	void statement();
@@ -129,6 +129,7 @@ private:
 	uint8_t parse_variable(std::string_view error);
 
 	void init_compiler(FunctionType type);
+	auto end_compiler()->std::pair<ObjFunction*, std::unique_ptr<Compiler>>;
 	void add_local(const Token& name);
 	uint8_t add_upvalue(std::unique_ptr<Compiler>& compiler, uint8_t index, bool is_local);
 	void begin_scope()const;
@@ -151,29 +152,29 @@ private:
 	}
 
 	template<typename T>
-	typename std::enable_if_t<opcode_trait<T>, void>
+	typename std::enable_if_t<opcode_trait_v<T>, void>
 		emit_byte(T byte) const
 	{
 		current_chunk().write(byte, parser.previous.line);
 	}
 
-	template<typename T1, typename T2>
-	typename std::enable_if_t<opcode_trait<T1> && opcode_trait<T2>, void>
-		emit_bytes(T1 b1, T2 b2) const
+	template<typename T, typename... Ts>
+	typename std::enable_if_t<opcode_trait_v<T, Ts...>, void>
+		emit_byte(T byte, Ts... bytes) const
 	{
-		emit_byte(b1);
-		emit_byte(b2);
+		emit_byte(byte);
+		emit_byte(bytes...);
 	}
 
 	template<typename T>
 	typename std::enable_if_t<std::is_convertible_v<T, Value>, void>
 		emit_constant(T&& value)
 	{
-		emit_bytes(OpCode::Constant, make_constant(std::forward<T>(value)));
+		emit_byte(OpCode::Constant, make_constant(std::forward<T>(value)));
 	}
 
 	template<typename T>
-	typename std::enable_if_t<opcode_trait<T>, size_t>
+	typename std::enable_if_t<opcode_trait_v<T>, size_t>
 		emit_jump(T&& instruction)
 	{
 		emit_byte(std::forward<T>(instruction));
@@ -189,7 +190,6 @@ private:
 	bool check(TokenType type)const noexcept;
 	void consume(TokenType type, std::string_view message);
 	bool match(TokenType type);
-	std::pair<ObjFunction*, std::unique_ptr<Compiler>> end_compiler();
 
 	Chunk& current_chunk()const noexcept;
 

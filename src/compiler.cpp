@@ -46,12 +46,12 @@ void Compilation::binary([[maybe_unused]] bool can_assign)
 
 	switch (op)
 	{
-		case TokenType::BangEqual: emit_bytes(OpCode::Equal, OpCode::Not); break;
+		case TokenType::BangEqual: emit_byte(OpCode::Equal, OpCode::Not); break;
 		case TokenType::EqualEqual: emit_byte(OpCode::Equal); break;
 		case TokenType::Greater: emit_byte(OpCode::Greater); break;
-		case TokenType::GreaterEqual: emit_bytes(OpCode::Less, OpCode::Not); break;
+		case TokenType::GreaterEqual: emit_byte(OpCode::Less, OpCode::Not); break;
 		case TokenType::Less: emit_byte(OpCode::Less); break;
-		case TokenType::LessEqual: emit_bytes(OpCode::Greater, OpCode::Not); break;
+		case TokenType::LessEqual: emit_byte(OpCode::Greater, OpCode::Not); break;
 		case TokenType::Plus: emit_byte(OpCode::Add); break;
 		case TokenType::Minus: emit_byte(OpCode::Subtract); break;
 		case TokenType::Star: emit_byte(OpCode::Multiply); break;
@@ -64,7 +64,7 @@ void Compilation::binary([[maybe_unused]] bool can_assign)
 void Compilation::call([[maybe_unused]] bool can_assign)
 {
 	auto arg_count = argument_list();
-	emit_bytes(OpCode::Call, arg_count);
+	emit_byte(OpCode::Call, arg_count);
 }
 
 void Compilation::grouping([[maybe_unused]] bool can_assign)
@@ -328,7 +328,7 @@ void Compilation::function(FunctionType type)
 	block();
 
 	auto [function, done] = end_compiler();
-	emit_bytes(OpCode::Closure, make_constant(function));
+	emit_byte(OpCode::Closure, make_constant(function));
 
 	for (size_t i = 0; i < function->upvalue_count; i++)
 	{
@@ -380,7 +380,7 @@ void Compilation::define_variable(uint8_t global) const
 		return;
 	}
 
-	emit_bytes(OpCode::DefineGlobal, global);
+	emit_byte(OpCode::DefineGlobal, global);
 }
 
 uint8_t Compilation::identifier_constant(const Token& name)
@@ -413,10 +413,10 @@ void Compilation::named_variable(const Token& name, bool can_assign)
 	if (can_assign && match(TokenType::Equal))
 	{
 		expression();
-		emit_bytes(set_op, arg.value());
+		emit_byte(set_op, arg.value());
 	} else
 	{
-		emit_bytes(get_op, arg.value());
+		emit_byte(get_op, arg.value());
 	}
 }
 
@@ -473,6 +473,24 @@ void Compilation::init_compiler(FunctionType type)
 	local.depth = 0;
 	local.is_captured = false;
 	local.name.text = std::string_view();
+}
+
+auto Compilation::end_compiler()->std::pair<ObjFunction*, std::unique_ptr<Compiler>>
+{
+	emit_return();
+	auto function = current->function;
+
+#ifdef _DEBUG
+	if (!parser.had_error)
+		disassemble_chunk(current_chunk(),
+			function->name == nullptr ? "<script>" : function->name->text());
+#endif // _DEBUG
+
+	// return ended compiler out to Compilation::function
+	// so that it has access to array<upvalue>
+	std::unique_ptr<Compiler> done = std::move(current);
+	current = std::move(done->enclosing);
+	return std::make_pair(function, std::move(done));
 }
 
 void Compilation::add_local(const Token& name)
@@ -627,24 +645,6 @@ bool Compilation::match(TokenType type)
 	if (!check(type)) return false;
 	advance();
 	return true;
-}
-
-std::pair<ObjFunction*, std::unique_ptr<Compiler>> Compilation::end_compiler()
-{
-	emit_return();
-	auto function = current->function;
-
-#ifdef _DEBUG
-	if (!parser.had_error)
-		disassemble_chunk(current_chunk(),
-			function->name == nullptr ? "<script>" : function->name->text());
-#endif // _DEBUG
-
-	// return ended compiler out to Compilation::function
-	// so that it has access to array<upvalue>
-	std::unique_ptr<Compiler> done = std::move(current);
-	current = std::move(done->enclosing);
-	return std::make_pair(function, std::move(done));
 }
 
 Chunk& Compilation::current_chunk() const noexcept

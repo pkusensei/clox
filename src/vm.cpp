@@ -40,6 +40,7 @@ InterpretResult VM::interpret(std::string_view source)
 	push(function);
 	auto closure = create_obj_closure(function, *this);
 	pop();
+	push(closure);
 	call_value(closure, 0);
 	return run();
 }
@@ -374,8 +375,8 @@ Value CallFrame::read_constant()
 uint16_t CallFrame::read_short()
 {
 	ip += 2;
-	auto a = static_cast<uint8_t>(chunk().code.at(ip - 2)) << 8;
-	auto b = static_cast<uint8_t>(chunk().code.at(ip - 1));
+	auto a = chunk().code.at(ip - 2) << 8;
+	auto b = chunk().code.at(ip - 1);
 	return static_cast<uint16_t>(a | b);
 }
 

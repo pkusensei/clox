@@ -47,7 +47,13 @@ std::string_view nameof(OpCode code);
 std::ostream& operator<<(std::ostream& out, OpCode code);
 
 template<typename T>
-constexpr bool opcode_trait = std::is_same_v<uint8_t, T> || std::is_same_v<OpCode, T>;
+using opcode_trait_helper = std::disjunction<std::is_same<uint8_t, T>, std::is_same<OpCode, T>>;
+
+template<typename... Ts>
+using opcode_trait = std::conjunction<opcode_trait_helper<Ts>...>;
+
+template<typename... Ts>
+constexpr bool opcode_trait_v = opcode_trait<Ts...>::value;
 
 struct Chunk
 {
@@ -66,7 +72,7 @@ struct Chunk
 	}
 
 	template<typename T>
-	typename std::enable_if_t<opcode_trait<T>, void>
+	typename std::enable_if_t<opcode_trait_v<T>, void>
 		write(T byte, size_t line)
 	{
 		code.push_back(static_cast<uint8_t>(byte));

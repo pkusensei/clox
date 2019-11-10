@@ -54,7 +54,7 @@ int run_file(Clox::VM& vm, fs::path path)
 		source = buffer.str();
 	} catch (...)
 	{
-		std::cout << "Could not open or read file \"" << path << "\".\n";
+		std::cout << "Could not open or read file " << path << ".\n";
 		return 74;
 	}
 

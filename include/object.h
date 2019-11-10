@@ -69,13 +69,11 @@ struct ObjClosure final :public ObjT<ObjClosure>
 	std::vector<ObjUpvalue*> upvalues;
 
 	ObjClosure(ObjFunction* func)
-		:ObjT(ObjType::Closure), function(func)
+		:ObjT(ObjType::Closure), function(func), upvalues(func->upvalue_count, nullptr)
 	{
-		for (size_t i = 0; i < function->upvalue_count; i++)
-			upvalues.push_back(nullptr);
 	}
 
-	size_t upvalue_count()const noexcept { return upvalues.size(); }
+	constexpr size_t upvalue_count()const noexcept { return upvalues.size(); }
 };
 
 std::ostream& operator<<(std::ostream& out, const ObjClosure& s);
