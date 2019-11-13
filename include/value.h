@@ -24,26 +24,26 @@ struct Value
 	constexpr Value(double value) noexcept : value(value) {}
 	constexpr Value(Obj* obj) noexcept : value(obj) {}
 
-	constexpr bool is_bool()const noexcept { return std::holds_alternative<bool>(value); }
-	constexpr bool is_nil()const noexcept { return std::holds_alternative<std::monostate>(value); }
-	constexpr bool is_number()const noexcept { return std::holds_alternative<double>(value); }
-	constexpr bool is_obj()const noexcept { return std::holds_alternative<Obj*>(value); }
+	[[nodiscard]] constexpr bool is_bool()const noexcept { return std::holds_alternative<bool>(value); }
+	[[nodiscard]] constexpr bool is_nil()const noexcept { return std::holds_alternative<std::monostate>(value); }
+	[[nodiscard]] constexpr bool is_number()const noexcept { return std::holds_alternative<double>(value); }
+	[[nodiscard]] constexpr bool is_obj()const noexcept { return std::holds_alternative<Obj*>(value); }
 
 	template<typename T>
-	constexpr decltype(auto) as()const
+	[[nodiscard]] constexpr decltype(auto) as()const
 	{
 		return std::get<T>(value);
 	}
 
-	bool is_obj_type(ObjType type)const;
-	bool is_closure()const;
-	bool is_function()const;
-	bool is_native()const;
-	bool is_string()const;
-	ObjClosure* as_closure()const;
-	ObjFunction* as_function()const;
-	ObjNative* as_native()const;
-	ObjString* as_string()const;
+	[[nodiscard]] bool is_obj_type(ObjType type)const;
+	[[nodiscard]] bool is_closure()const;
+	[[nodiscard]] bool is_function()const;
+	[[nodiscard]] bool is_native()const;
+	[[nodiscard]] bool is_string()const;
+	[[nodiscard]] ObjClosure* as_closure()const;
+	[[nodiscard]] ObjFunction* as_function()const;
+	[[nodiscard]] ObjNative* as_native()const;
+	[[nodiscard]] ObjString* as_string()const;
 };
 
 constexpr bool operator==(const Value& v1, const Value& v2)noexcept
@@ -61,7 +61,7 @@ struct ValueArray
 {
 	std::vector<Value> values;
 
-	constexpr size_t count()const noexcept { return values.size(); }
+	[[nodiscard]] constexpr size_t count()const noexcept { return values.size(); }
 
 	template<typename T>
 	typename std::enable_if_t<std::is_convertible_v<T, Value>, void>

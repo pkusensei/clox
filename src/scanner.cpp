@@ -162,7 +162,6 @@ TokenType Scanner::check_keyword(size_t begin, size_t length, std::string_view r
 	return TokenType::Identifier;
 }
 
-
 Token Scanner::error_token(std::string_view message) const noexcept
 {
 	return Token(TokenType::Error, message, line);

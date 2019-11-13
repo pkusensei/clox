@@ -25,7 +25,7 @@ Value clock_native([[maybe_unused]] uint8_t arg_count, [[maybe_unused]] Value* a
 	return std::chrono::duration<double>(tp).count();
 }
 
-constexpr bool is_falsey(const Value& value)
+[[nodiscard]] constexpr bool is_falsey(const Value& value)
 {
 	return value.is_nil() ||
 		(value.is_bool() && !value.as<bool>());
@@ -41,7 +41,7 @@ InterpretResult VM::interpret(std::string_view source)
 	auto closure = create_obj_closure(function, *this);
 	pop();
 	push(closure);
-	call_value(closure, 0);
+	static_cast<void>(call_value(closure, 0));
 	return run();
 }
 

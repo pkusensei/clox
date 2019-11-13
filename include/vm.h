@@ -40,12 +40,12 @@ struct CallFrame
 	size_t ip = 0; // index at function->chunk.code
 	Value* slots = nullptr;  // pointer to VM::stack
 
-	uint8_t read_byte();
-	Value read_constant();
-	uint16_t read_short();
-	ObjString* read_string();
+	[[nodiscard]] uint8_t read_byte();
+	[[nodiscard]] Value read_constant();
+	[[nodiscard]] uint16_t read_short();
+	[[nodiscard]] ObjString* read_string();
 
-	const Chunk& chunk()const noexcept { return closure->function->chunk; }
+	[[nodiscard]] const Chunk& chunk()const noexcept { return closure->function->chunk; }
 };
 
 struct VM
@@ -65,13 +65,13 @@ struct VM
 private:
 	InterpretResult run();
 
-	ObjUpvalue* captured_upvalue(Value* local);
+	[[nodiscard]] ObjUpvalue* captured_upvalue(Value* local);
 	void close_upvalues(Value* last);
-	bool call(const ObjClosure* closure, uint8_t arg_count);
-	bool call_value(const Value& callee, uint8_t arg_count);
+	[[nodiscard]] bool call(const ObjClosure* closure, uint8_t arg_count);
+	[[nodiscard]] bool call_value(const Value& callee, uint8_t arg_count);
 	void define_native(std::string_view name, NativeFn function);
 
-	const Value& peek(size_t distance)const;
+	[[nodiscard]] const Value& peek(size_t distance)const;
 	Value pop();
 	void push(Value value);
 
@@ -99,7 +99,7 @@ private:
 
 public:
 	template<typename T>
-	ObjString* find_string(const T& str)const
+	[[nodiscard]] ObjString* find_string(const T& str)const
 	{
 		if (strings.empty()) return nullptr;
 

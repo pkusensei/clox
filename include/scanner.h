@@ -37,7 +37,7 @@ struct Token
 		:type(type), text(text), line(line)
 	{
 	}
-	Token() = default;
+	constexpr Token()noexcept : type(TokenType::Eof) {};
 };
 
 struct Scanner
@@ -52,24 +52,24 @@ struct Scanner
 	{
 	}
 
-	Token scan_token();
+	[[nodiscard]] Token scan_token();
 
 private:
-	Token identifier();
-	Token number();
-	Token string();
+	[[nodiscard]] Token identifier();
+	[[nodiscard]] Token number();
+	[[nodiscard]] Token string();
 	void skip_whitespace();
-	TokenType identifier_type()const;
-	TokenType check_keyword(size_t begin, size_t length, std::string_view rest, TokenType type)const;
+	[[nodiscard]] TokenType identifier_type()const;
+	[[nodiscard]] TokenType check_keyword(size_t begin, size_t length, std::string_view rest, TokenType type)const;
 
-	Token error_token(std::string_view message)const noexcept;
-	Token make_token(TokenType type)const noexcept;
+	[[nodiscard]] Token error_token(std::string_view message)const noexcept;
+	[[nodiscard]] Token make_token(TokenType type)const noexcept;
 
 	char advance();
-	bool is_at_end()const noexcept;
-	bool match(char expected);
-	char peek()const;
-	char peek_next()const;
+	[[nodiscard]] bool is_at_end()const noexcept;
+	[[nodiscard]] bool match(char expected);
+	[[nodiscard]] char peek()const;
+	[[nodiscard]] char peek_next()const;
 };
 
 } //Clox

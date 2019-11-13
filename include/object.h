@@ -60,7 +60,7 @@ struct ObjFunction final : public ObjT<ObjFunction>
 };
 
 std::ostream& operator<<(std::ostream& out, const ObjFunction& f);
-ObjFunction* create_obj_function(VM& vm);
+[[nodiscard]] ObjFunction* create_obj_function(VM& vm);
 
 struct ObjUpvalue;
 struct ObjClosure final :public ObjT<ObjClosure>
@@ -77,7 +77,7 @@ struct ObjClosure final :public ObjT<ObjClosure>
 };
 
 std::ostream& operator<<(std::ostream& out, const ObjClosure& s);
-ObjClosure* create_obj_closure(ObjFunction* func, VM& vm);
+[[nodiscard]] ObjClosure* create_obj_closure(ObjFunction* func, VM& vm);
 
 using NativeFn = Value(*)(uint8_t arg_count, Value * args);
 
@@ -92,18 +92,18 @@ struct ObjNative final :public ObjT<ObjNative>
 };
 
 std::ostream& operator<<(std::ostream& out, const ObjNative& s);
-ObjNative* create_obj_native(NativeFn func, VM& vm);
+[[nodiscard]] ObjNative* create_obj_native(NativeFn func, VM& vm);
 
 struct ObjString final :public ObjT<ObjString>
 {
 	std::string content;
 
-	ObjString() :ObjT(ObjType::String) {}
+	ObjString()noexcept :ObjT(ObjType::String) {}
 	std::string_view text()const { return content; }
 };
 
 std::ostream& operator<<(std::ostream& out, const ObjString& s);
-std::string operator+(const ObjString& lhs, const ObjString& rhs);
+[[nodiscard]] std::string operator+(const ObjString& lhs, const ObjString& rhs);
 
 struct ObjUpvalue final :public ObjT<ObjUpvalue>
 {
@@ -118,6 +118,6 @@ struct ObjUpvalue final :public ObjT<ObjUpvalue>
 };
 
 std::ostream& operator<<(std::ostream& out, const ObjUpvalue& s);
-ObjUpvalue* create_obj_upvalue(Value* slot, VM& vm);
+[[nodiscard]] ObjUpvalue* create_obj_upvalue(Value* slot, VM& vm);
 
 } //Clox

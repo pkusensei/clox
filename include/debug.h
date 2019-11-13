@@ -7,6 +7,6 @@
 namespace Clox {
 
 void disassemble_chunk(const Chunk& chunk, std::string_view name);
-size_t disassemble_instruction(const Chunk& chunk, size_t offset);
+[[nodiscard]] size_t disassemble_instruction(const Chunk& chunk, size_t offset);
 
 } // Clox

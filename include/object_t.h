@@ -6,7 +6,7 @@
 namespace Clox {
 
 template<typename T>
-ObjString* create_obj_string(T&& str, VM& vm)
+[[nodiscard]] ObjString* create_obj_string(T&& str, VM& vm)
 {
 	auto interned = vm.find_string(str);
 	if (interned != nullptr)

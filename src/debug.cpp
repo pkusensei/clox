@@ -16,7 +16,7 @@ void disassemble_chunk(const Chunk& chunk, std::string_view name)
 	}
 }
 
-size_t byte_instruction(std::string_view name, const Chunk& chunk, size_t offset)
+[[nodiscard]] size_t byte_instruction(std::string_view name, const Chunk& chunk, size_t offset)
 {
 	auto slot = chunk.code.at(offset + 1);
 	std::cout << std::setfill(' ') << std::left << std::setw(16) << name << ' ';
@@ -24,7 +24,7 @@ size_t byte_instruction(std::string_view name, const Chunk& chunk, size_t offset
 	return offset + 2;
 }
 
-size_t constant_instruction(std::string_view name, const Chunk& chunk, size_t offset)
+[[nodiscard]] size_t constant_instruction(std::string_view name, const Chunk& chunk, size_t offset)
 {
 	auto constant = chunk.code.at(offset + 1);
 	std::cout << std::setfill(' ') << std::left << std::setw(16) << name << ' ';
@@ -33,7 +33,7 @@ size_t constant_instruction(std::string_view name, const Chunk& chunk, size_t of
 	return offset + 2;
 }
 
-size_t jump_instruction(std::string_view name, int sign, const Chunk& chunk, size_t offset)
+[[nodiscard]] size_t jump_instruction(std::string_view name, int sign, const Chunk& chunk, size_t offset)
 {
 	auto jump = static_cast<uint16_t>(chunk.code.at(offset + 1) << 8);
 	jump |= chunk.code.at(offset + 2);
@@ -43,7 +43,7 @@ size_t jump_instruction(std::string_view name, int sign, const Chunk& chunk, siz
 	return offset + 3;
 }
 
-size_t simple_instruction(std::string_view name, size_t offset)
+[[nodiscard]] size_t simple_instruction(std::string_view name, size_t offset)
 {
 	std::cout << name << '\n';
 	return offset + 1;
