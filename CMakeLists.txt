@@ -13,7 +13,10 @@ add_executable (${PROJECT_NAME} src/clox.cpp
 	src/chunk.cpp
 	src/compiler.cpp
 	src/debug.cpp
+	src/obj.cpp
 	src/object.cpp
+	src/obj_string.cpp
+	src/memory.cpp
 	src/scanner.cpp
 	src/value.cpp
 	src/vm.cpp)

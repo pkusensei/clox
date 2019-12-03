@@ -1,12 +1,10 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <map>
-#include <memory>
-#include <set>
 
-#include "chunk.h"
+#include "compiler.h"
+#include "memory.h"
 #include "object.h"
 
 namespace Clox {
@@ -45,7 +43,7 @@ struct CallFrame
 	[[nodiscard]] uint16_t read_short();
 	[[nodiscard]] ObjString* read_string();
 
-	[[nodiscard]] const Chunk& chunk()const noexcept { return closure->function->chunk; }
+	[[nodiscard]] const Chunk& chunk()const noexcept;
 };
 
 struct VM
@@ -55,9 +53,10 @@ struct VM
 	std::array<Value, STACK_MAX> stack;
 	Value* stacktop = nullptr;
 	std::map<ObjString*, Value> globals;
-	std::set<ObjString*> strings;
 	ObjUpvalue* open_upvalues = nullptr;
-	std::unique_ptr<Obj, ObjDeleter> objects = nullptr;
+
+	Compilation cu;
+	GC gc;
 
 	InterpretResult interpret(std::string_view source);
 	VM();
@@ -95,19 +94,6 @@ private:
 				std::cerr << function->name->text() << "()\n";
 		}
 		reset_stack();
-	}
-
-public:
-	template<typename T>
-	[[nodiscard]] ObjString* find_string(const T& str)const
-	{
-		if (strings.empty()) return nullptr;
-
-		auto res = std::find_if(strings.cbegin(), strings.cend(),
-			[&str](const auto& it) { return it->content == str; });
-		if (res != strings.end())
-			return *res;
-		return nullptr;
 	}
 };
 

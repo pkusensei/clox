@@ -2,9 +2,8 @@
 
 #include <chrono>
 
-#include "compiler.h"
 #include "debug.h"
-#include "object_t.h"
+#include "obj_string.h"
 
 namespace Clox {
 
@@ -33,12 +32,12 @@ Value clock_native([[maybe_unused]] uint8_t arg_count, [[maybe_unused]] Value* a
 
 InterpretResult VM::interpret(std::string_view source)
 {
-	auto function = Compilation::compile(source, *this);
+	auto function = cu.compile(source);
 	if (function == nullptr)
 		return InterpretResult::CompileError;
 
 	push(function);
-	auto closure = create_obj_closure(function, *this);
+	auto closure = create_obj_closure(function, gc);
 	pop();
 	push(closure);
 	static_cast<void>(call_value(closure, 0));
@@ -46,7 +45,10 @@ InterpretResult VM::interpret(std::string_view source)
 }
 
 VM::VM()
+	:cu(*this), gc(*this)
 {
+	AllocBase::init_gc(&gc);
+
 	reset_stack();
 
 	define_native("clock", clock_native);
@@ -154,7 +156,7 @@ InterpretResult VM::run()
 				{
 					auto b = pop().as_string();
 					auto a = pop().as_string();
-					push(create_obj_string((*a) + (*b), *this));
+					push(create_obj_string((*a) + (*b), gc));
 				} else if (peek(0).is_number() && peek(1).is_number())
 				{
 					auto b = pop().as<double>();
@@ -212,7 +214,7 @@ InterpretResult VM::run()
 			case OpCode::Closure:
 			{
 				auto function = frame->read_constant().as_function();
-				auto closure = create_obj_closure(function, *this);
+				auto closure = create_obj_closure(function, gc);
 				push(closure);
 				for (size_t i = 0; i < closure->upvalue_count(); i++)
 				{
@@ -263,7 +265,7 @@ ObjUpvalue* VM::captured_upvalue(Value* local)
 	if (upvalue != nullptr && upvalue->location == local)
 		return upvalue;
 
-	auto created = create_obj_upvalue(local, *this);
+	auto created = create_obj_upvalue(local, gc);
 	created->next = upvalue;
 	if (prev_upvalue == nullptr)
 		open_upvalues = created;
@@ -330,8 +332,8 @@ bool VM::call_value(const Value& callee, uint8_t arg_count)
 
 void VM::define_native(std::string_view name, NativeFn function)
 {
-	push(create_obj_string(name, *this));
-	push(create_obj_native(function, *this));
+	push(create_obj_string(name, gc));
+	push(create_obj_native(function, gc));
 	globals.insert_or_assign(stack.at(0).as_string(), stack.at(1));
 	pop();
 	pop();
@@ -358,6 +360,11 @@ void VM::reset_stack() noexcept
 {
 	stacktop = stack.data();
 	frame_count = 0;
+}
+
+const Chunk& CallFrame::chunk() const noexcept
+{
+	return closure->function->chunk;
 }
 
 uint8_t CallFrame::read_byte()

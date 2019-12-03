@@ -1,6 +1,7 @@
 #include "value.h"
 
 #include "object.h"
+#include "obj_string.h"
 
 namespace Clox {
 

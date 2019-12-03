@@ -8,6 +8,11 @@
 
 namespace Clox {
 
+struct VM;
+
+struct Compilation;
+struct Parser;
+
 enum class Precedence :uint8_t
 {
 	None,
@@ -28,7 +33,6 @@ inline Precedence operator+(Precedence prec, uint8_t i)noexcept
 	return static_cast<Precedence>(static_cast<uint8_t>(prec) + i);
 }
 
-struct Parser;
 void error(Parser& parser, std::string_view message);
 void error_at_current(Parser& parser, std::string_view message);
 void error_at(Parser& parser, const Token& token, std::string_view message);
@@ -54,7 +58,6 @@ struct Parser
 	void synchronize();
 };
 
-struct Compilation;
 using ParseFn = void (Compilation::*)(bool can_assign);
 struct ParseRule
 {
@@ -94,20 +97,18 @@ struct Compiler
 	int scope_depth = 0;
 };
 
-struct VM;
-
 struct Compilation
 {
 	std::unique_ptr<Compiler> current = nullptr;
-	Parser parser;
+	std::unique_ptr<Parser> parser = nullptr;
 	VM& vm;
 
-	static ObjFunction* compile(std::string_view source, VM& vm);
-
-	constexpr Compilation(std::string_view source, VM& vm)noexcept
-		:parser(source), vm(vm)
+	constexpr explicit Compilation(VM& vm)noexcept
+		:vm(vm)
 	{
 	}
+
+	[[nodiscard]] ObjFunction* compile(std::string_view source);
 
 private:
 
@@ -162,7 +163,7 @@ private:
 		auto constant = current_chunk().add_constant(std::forward<T>(value));
 		if (constant > UINT8_MAX)
 		{
-			error(parser, "Too many constants in one chunk.");
+			error(*parser, "Too many constants in one chunk.");
 			return 0;
 		}
 		return static_cast<uint8_t>(constant);
@@ -172,7 +173,7 @@ private:
 	typename std::enable_if_t<opcode_trait_v<T>, void>
 		emit_byte(T byte) const
 	{
-		current_chunk().write(byte, parser.previous.line);
+		current_chunk().write(byte, parser->previous.line);
 	}
 
 	template<typename T, typename... Ts>

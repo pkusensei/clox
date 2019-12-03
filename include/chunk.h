@@ -4,6 +4,7 @@
 #include <string_view>
 #include <vector>
 
+#include "memory.h"
 #include "value.h"
 
 namespace Clox {
@@ -59,9 +60,9 @@ constexpr bool opcode_trait_v = opcode_trait<Ts...>::value;
 
 struct Chunk
 {
-	std::vector<uint8_t> code;
-	std::vector<size_t> lines;
-	ValueArray constants;
+	std::vector<uint8_t, Allocator<uint8_t>> code;
+	std::vector<size_t, Allocator<size_t>> lines;
+	ValueArray<Allocator<Value>> constants;
 
 	[[nodiscard]] constexpr size_t count()const noexcept { return code.size(); }
 

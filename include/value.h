@@ -57,9 +57,10 @@ constexpr bool operator!=(const Value& v1, const Value& v2)noexcept
 
 std::ostream& operator<<(std::ostream& out, const Value& value);
 
+template<typename Alloc>
 struct ValueArray
 {
-	std::vector<Value> values;
+	std::vector<Value, Alloc> values;
 
 	[[nodiscard]] constexpr size_t count()const noexcept { return values.size(); }
 
