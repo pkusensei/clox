@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include "debug.h"
-//#include "object.h"
 #include "obj_string.h"
 #include "vm.h"
 

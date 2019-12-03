@@ -13,6 +13,9 @@ struct ObjFunction;
 struct ObjNative;
 struct ObjString;
 
+template<typename T>
+struct Allocator;
+
 struct Value
 {
 	using var_t = std::variant<bool, std::monostate, double, Obj*>;
@@ -57,10 +60,10 @@ constexpr bool operator!=(const Value& v1, const Value& v2)noexcept
 
 std::ostream& operator<<(std::ostream& out, const Value& value);
 
-template<typename Alloc>
+template<template<typename>typename Alloc = Allocator>
 struct ValueArray
 {
-	std::vector<Value, Alloc> values;
+	std::vector<Value, Alloc<Value>> values;
 
 	[[nodiscard]] constexpr size_t count()const noexcept { return values.size(); }
 

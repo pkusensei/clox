@@ -17,7 +17,6 @@ enum class ObjType
 	Upvalue
 };
 
-// TODO try extract Obj and ObjDeleter to another file to solve cyclic dependency
 struct ObjDeleter
 {
 	void operator()(Obj* ptr) const;

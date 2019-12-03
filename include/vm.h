@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <map>
 
 #include "compiler.h"
 #include "memory.h"
@@ -52,7 +51,7 @@ struct VM
 	size_t frame_count = 0;
 	std::array<Value, STACK_MAX> stack;
 	Value* stacktop = nullptr;
-	std::map<ObjString*, Value> globals;
+	table globals;
 	ObjUpvalue* open_upvalues = nullptr;
 
 	Compilation cu;

@@ -1,7 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
 project(clox LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)
 
 if(MSVC)
   add_compile_options(/W4 /WX)
@@ -23,3 +22,5 @@ add_executable (${PROJECT_NAME} src/clox.cpp
 
 target_include_directories(${PROJECT_NAME} 
 	PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)

@@ -8,6 +8,8 @@
 
 namespace Clox {
 
+struct Chunk;
+struct ObjFunction;
 struct VM;
 
 struct Compilation;

@@ -47,7 +47,7 @@ InterpretResult VM::interpret(std::string_view source)
 VM::VM()
 	:cu(*this), gc(*this)
 {
-	AllocBase::init_gc(&gc);
+	AllocBase::init(&gc);
 
 	reset_stack();
 

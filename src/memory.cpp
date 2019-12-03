@@ -37,7 +37,7 @@ void GC::mark_roots()
 	mark_compiler_roots();
 }
 
-void GC::mark_array(const ValueArray<Allocator<Value>>& array)
+void GC::mark_array(const ValueArray<>& array)
 {
 	for (auto& value : array.values)
 		mark_value(value);
@@ -73,7 +73,7 @@ void GC::mark_value(const Value& value)
 		mark_object(value.as<Obj*>());
 }
 
-void GC::mark_table(const std::map<ObjString*, Value>& table)
+void GC::mark_table(const table& table)
 {
 	for (auto& [key, value] : table)
 	{

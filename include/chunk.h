@@ -58,11 +58,14 @@ using opcode_trait = std::conjunction<opcode_trait_helper<Ts>...>;
 template<typename... Ts>
 constexpr bool opcode_trait_v = opcode_trait<Ts...>::value;
 
-struct Chunk
+namespace {
+
+template<template<typename>typename Alloc = Allocator>
+struct ChunkT
 {
-	std::vector<uint8_t, Allocator<uint8_t>> code;
-	std::vector<size_t, Allocator<size_t>> lines;
-	ValueArray<Allocator<Value>> constants;
+	std::vector<uint8_t, Alloc<uint8_t>> code;
+	std::vector<size_t, Alloc<size_t>> lines;
+	ValueArray<Alloc> constants;
 
 	[[nodiscard]] constexpr size_t count()const noexcept { return code.size(); }
 
@@ -81,6 +84,12 @@ struct Chunk
 		code.push_back(static_cast<uint8_t>(byte));
 		lines.push_back(line);
 	}
+};
+
+}
+
+struct Chunk :public ChunkT<>
+{
 };
 
 } // Clox
