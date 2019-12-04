@@ -7,27 +7,32 @@ namespace Clox {
 
 void ObjDeleter::operator()(Obj* ptr) const
 {
+
+#define DEALLOC(t) \
+do { \
+auto p = static_cast<t*>(ptr); \
+static Allocator<t> a; \
+AllocTraits<t>::destroy(a, p); \
+AllocTraits<t>::deallocate(a, p, 1); \
+break; \
+} while(false);
+
 	switch (ptr->type)
 	{
 		case ObjType::Closure:
-			delete static_cast<ObjClosure*>(ptr);
-			break;
+			DEALLOC(ObjClosure);
 		case ObjType::Function:
-			delete static_cast<ObjFunction*>(ptr);
-			break;
+			DEALLOC(ObjFunction);
 		case ObjType::Native:
-			delete static_cast<ObjNative*>(ptr);
-			break;
+			DEALLOC(ObjNative);
 		case ObjType::String:
-			delete static_cast<ObjString*>(ptr);
-			break;
+			DEALLOC(ObjString);
 		case ObjType::Upvalue:
-			delete static_cast<ObjUpvalue*>(ptr);
-			break;
-
+			DEALLOC(ObjUpvalue);
 		default:
 			break;
 	}
+#undef DEALLOC
 }
 
 std::ostream& operator<<(std::ostream& out, const Obj& obj)

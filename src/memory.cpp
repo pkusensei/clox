@@ -6,10 +6,13 @@
 
 namespace Clox {
 
+constexpr auto GC_HEAP_GROW_FACTOR = 2;
+
 void GC::collect()
 {
 #ifdef DEBUG_LOG_GC
 	std::cout << "-- gc begin\n";
+	auto before = bytes_allocated;
 #endif // DEBUG_LOG_GC
 
 	mark_roots();
@@ -17,8 +20,14 @@ void GC::collect()
 	remove_white_string();
 	sweep();
 
+	next_gc = bytes_allocated * GC_HEAP_GROW_FACTOR;
+
 #ifdef DEBUG_LOG_GC
 	std::cout << "-- gc end\n";
+	std::cout << "   collected " << before - bytes_allocated;
+	std::cout << " bytes (from " << before;
+	std::cout << " to " << bytes_allocated << ") next at ";
+	std::cout << next_gc << '\n';
 #endif // DEBUG_LOG_GC
 }
 
@@ -59,7 +68,7 @@ void GC::mark_object(Obj* ptr)
 	if (ptr->is_marked) return;
 
 #ifdef DEBUG_LOG_GC
-	std::cout << '"' << (void*)ptr << " mark ";
+	std::cout << (void*)ptr << " mark ";
 	std::cout << *ptr << '\n';
 #endif // DEBUG_LOG_GC
 
@@ -95,7 +104,7 @@ void GC::trace_references()
 void GC::blacken_object(Obj* ptr)
 {
 #ifdef DEBUG_LOG_GC
-	std::cout << '"' << (void*)ptr << " blacken ";
+	std::cout << (void*)ptr << " blacken ";
 	std::cout << *ptr << '\n';
 #endif // DEBUG_LOG_GC
 

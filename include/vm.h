@@ -60,6 +60,9 @@ struct VM
 	InterpretResult interpret(std::string_view source);
 	VM();
 
+	Value pop();
+	void push(Value value);
+
 private:
 	InterpretResult run();
 
@@ -70,8 +73,6 @@ private:
 	void define_native(std::string_view name, NativeFn function);
 
 	[[nodiscard]] const Value& peek(size_t distance)const;
-	Value pop();
-	void push(Value value);
 
 	void reset_stack()noexcept;
 

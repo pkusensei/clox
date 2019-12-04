@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 
 namespace Clox {
@@ -39,13 +40,5 @@ protected:
 
 std::ostream& operator<<(std::ostream& out, const Obj& obj);
 void register_obj(Obj* obj, GC& gc);
-
-template<typename Derived>
-struct ObjT :public Obj
-{
-protected:
-	constexpr explicit ObjT(ObjType type) noexcept :Obj(type) {}
-	const Derived& as()const noexcept { return static_cast<const Derived&>(*this); }
-};
 
 } //Clox

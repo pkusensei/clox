@@ -3,9 +3,16 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "debug.h"
 #include "obj_string.h"
 #include "vm.h"
+
+#ifdef _DEBUG
+//#define DEBUG_PRINT_CODE
+#endif // _DEBUG
+
+#ifdef DEBUG_PRINT_CODE
+#include "debug.h"
+#endif // DEBUG_PRINT_CODE
 
 namespace Clox {
 
@@ -194,7 +201,7 @@ void Compilation::string([[maybe_unused]] bool can_assign)
 {
 	const auto& text = parser->previous.text;
 	auto str = text.substr(1, text.size() - 2);
-	emit_constant(create_obj_string(str, vm.gc));
+	emit_constant(create_obj_string(str, vm));
 }
 
 void Compilation::unary([[maybe_unused]] bool can_assign)
@@ -472,7 +479,7 @@ void Compilation::define_variable(uint8_t global) const
 
 uint8_t Compilation::identifier_constant(const Token& name)
 {
-	return make_constant(create_obj_string(name.text, vm.gc));
+	return make_constant(create_obj_string(name.text, vm));
 }
 
 void Compilation::named_variable(const Token& name, bool can_assign)
@@ -554,7 +561,7 @@ void Compilation::init_compiler(FunctionType type)
 	current->type = type;
 
 	if (type != FunctionType::Script)
-		current->function->name = create_obj_string(parser->previous.text, vm.gc);
+		current->function->name = create_obj_string(parser->previous.text, vm);
 
 	auto& local = current->locals.at(current->local_count++);
 	local.depth = 0;
@@ -567,14 +574,14 @@ auto Compilation::end_compiler()->std::pair<ObjFunction*, std::unique_ptr<Compil
 	emit_return();
 	auto function = current->function;
 
-	//#ifdef _DEBUG
-	//	if (!parser->had_error)
-	//		disassemble_chunk(current_chunk(),
-	//			function->name == nullptr ? "<script>" : function->name->text());
-	//#endif // _DEBUG
+#ifdef DEBUG_PRINT_CODE
+	if (!parser->had_error)
+		disassemble_chunk(current_chunk(),
+			function->name == nullptr ? "<script>" : function->name->text());
+#endif // DEBUG_PRINT_CODE
 
-		// return ended compiler out to Compilation::function
-		// so that it has access to array<upvalue>
+	// return ended compiler out to Compilation::function
+	// so that it has access to array<upvalue>
 	std::unique_ptr<Compiler> done = std::move(current);
 	current = std::move(done->enclosing);
 	return std::make_pair(function, std::move(done));

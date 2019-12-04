@@ -8,7 +8,7 @@ std::ostream& operator<<(std::ostream& out, const ObjString& s)
 	return out;
 }
 
-std::string operator+(const ObjString& lhs, const ObjString& rhs)
+clox_string operator+(const ObjString& lhs, const ObjString& rhs)
 {
 	return lhs.content + rhs.content;
 }

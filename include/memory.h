@@ -10,6 +10,7 @@
 #include "value.h"
 
 #ifdef _DEBUG
+#define DEBUG_STRESS_GC
 #define DEBUG_LOG_GC
 #endif // _DEBUG
 
@@ -62,6 +63,9 @@ struct Allocator :public AllocBase
 
 template<typename T>
 inline typename Allocator<T>::worker Allocator<T>::a{};
+
+template<typename T>
+using AllocTraits = std::allocator_traits<Allocator<T>>;
 
 using table = std::map<ObjString*, Value, std::less<ObjString*>, Allocator<std::pair<ObjString* const, Value>>>;
 
@@ -116,7 +120,16 @@ template<typename T>
 [[nodiscard]] constexpr T* Allocator<T>::allocate(std::size_t n)
 {
 	if (gc != nullptr)
+	{
 		gc->bytes_allocated += sizeof(T) * n;
+
+#ifdef DEBUG_STRESS_GC
+		gc->collect();
+#endif // DEBUG_STRESS_GC
+
+		if (gc->bytes_allocated > gc->next_gc)
+			gc->collect();
+	}
 	return worker_traits::allocate(a, n);
 }
 

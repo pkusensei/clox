@@ -2,8 +2,15 @@
 
 #include <chrono>
 
-#include "debug.h"
 #include "obj_string.h"
+
+#ifdef _DEBUG
+//#define DEBUG_TRACE_EXECUTION
+#endif // _DEBUG
+
+#ifdef DEBUG_TRACE_EXECUTION
+#include "debug.h"
+#endif // DEBUG_TRACE_EXECUTION
 
 namespace Clox {
 
@@ -60,15 +67,15 @@ InterpretResult VM::run()
 
 	while (true)
 	{
-		//#ifdef _DEBUG
-		//		std::cout << "          ";
-		//		for (auto slot = stack.data(); slot < stacktop; ++slot)
-		//		{
-		//			std::cout << "[ " << *slot << " ]";
-		//		}
-		//		std::cout << '\n';
-		//		disassemble_instruction(frame->chunk(), frame->ip);
-		//#endif // _DEBUG
+#ifdef DEBUG_TRACE_EXECUTION
+		std::cout << "          ";
+		for (auto slot = stack.data(); slot < stacktop; ++slot)
+		{
+			std::cout << "[ " << *slot << " ]";
+		}
+		std::cout << '\n';
+		static_cast<void>(disassemble_instruction(frame->chunk(), frame->ip));
+#endif // DEBUG_TRACE_EXECUTION
 
 		auto instruction = static_cast<OpCode>(frame->read_byte());
 		switch (instruction)
@@ -154,9 +161,12 @@ InterpretResult VM::run()
 			{
 				if (peek(0).is_string() && peek(1).is_string())
 				{
-					auto b = pop().as_string();
-					auto a = pop().as_string();
-					push(create_obj_string((*a) + (*b), gc));
+					auto b = peek(0).as_string();
+					auto a = peek(1).as_string();
+					auto res = create_obj_string((*a) + (*b), *this);
+					pop();
+					pop();
+					push(res);
 				} else if (peek(0).is_number() && peek(1).is_number())
 				{
 					auto b = pop().as<double>();
@@ -332,7 +342,7 @@ bool VM::call_value(const Value& callee, uint8_t arg_count)
 
 void VM::define_native(std::string_view name, NativeFn function)
 {
-	push(create_obj_string(name, gc));
+	push(create_obj_string(name, *this));
 	push(create_obj_native(function, gc));
 	globals.insert_or_assign(stack.at(0).as_string(), stack.at(1));
 	pop();

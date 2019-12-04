@@ -162,7 +162,9 @@ private:
 	[[nodiscard]] typename std::enable_if_t<std::is_convertible_v<T, Value>, uint8_t>
 		make_constant(T&& value)
 	{
+		vm.push(value);
 		auto constant = current_chunk().add_constant(std::forward<T>(value));
+		vm.pop();
 		if (constant > UINT8_MAX)
 		{
 			error(*parser, "Too many constants in one chunk.");

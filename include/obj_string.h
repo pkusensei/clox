@@ -1,32 +1,36 @@
 #pragma once
 
 #include "obj.h"
-#include "memory.h"
+#include "vm.h"
 
 namespace Clox {
 
-struct ObjString final :public ObjT<ObjString>
-{
-	std::string content;
+using clox_string = std::basic_string<char, std::char_traits<char>, Allocator<char>>;
 
-	ObjString()noexcept :ObjT(ObjType::String) {}
+struct ObjString final :public Obj
+{
+	clox_string content;
+
+	ObjString()noexcept :Obj(ObjType::String) {}
 	std::string_view text()const { return content; }
 };
 
 std::ostream& operator<<(std::ostream& out, const ObjString& s);
-[[nodiscard]] std::string operator+(const ObjString& lhs, const ObjString& rhs);
+[[nodiscard]] clox_string operator+(const ObjString& lhs, const ObjString& rhs);
 
 template<typename T>
-[[nodiscard]] ObjString* create_obj_string(T&& str, GC& gc)
+[[nodiscard]] ObjString* create_obj_string(T&& str, VM& vm)
 {
-	auto interned = gc.find_string(str);
+	auto interned = vm.gc.find_string(str);
 	if (interned != nullptr)
 		return interned;
 
-	auto p = new ObjString();
+	auto p = alloc_ptr<ObjString>();
 	p->content = std::forward<T>(str);
-	gc.strings.emplace(p);
-	register_obj(p, gc);
+	vm.push(p);
+	vm.gc.strings.emplace(p);
+	register_obj(p, vm.gc);
+	vm.pop();
 	return p;
 }
 

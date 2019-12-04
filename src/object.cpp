@@ -6,7 +6,7 @@
 namespace Clox {
 
 ObjClosure::ObjClosure(ObjFunction* func)
-	:ObjT(ObjType::Closure), function(func), upvalues(func->upvalue_count, nullptr)
+	:Obj(ObjType::Closure), function(func), upvalues(func->upvalue_count, nullptr)
 {
 }
 
@@ -18,7 +18,7 @@ std::ostream& operator<<(std::ostream& out, const ObjClosure& s)
 
 ObjClosure* create_obj_closure(ObjFunction* func, GC& gc)
 {
-	auto p = new ObjClosure(func);
+	auto p = alloc_ptr<ObjClosure>(func);
 	register_obj(p, gc);
 	return p;
 }
@@ -34,7 +34,7 @@ std::ostream& operator<<(std::ostream& out, const ObjFunction& f)
 
 ObjFunction* create_obj_function(GC& vm)
 {
-	auto p = new ObjFunction();
+	auto p = alloc_ptr<ObjFunction>();
 	register_obj(p, vm);
 	return p;
 }
@@ -47,7 +47,7 @@ std::ostream& operator<<(std::ostream& out, [[maybe_unused]] const ObjNative& s)
 
 ObjNative* create_obj_native(NativeFn func, GC& gc)
 {
-	auto p = new ObjNative(func);
+	auto p = alloc_ptr<ObjNative>(func);
 	register_obj(p, gc);
 	return p;
 }
@@ -60,7 +60,7 @@ std::ostream& operator<<(std::ostream& out, [[maybe_unused]] const ObjUpvalue& s
 
 ObjUpvalue* create_obj_upvalue(Value* slot, GC& gc)
 {
-	auto p = new ObjUpvalue(slot);
+	auto p = alloc_ptr<ObjUpvalue>(slot);
 	register_obj(p, gc);
 	return p;
 }

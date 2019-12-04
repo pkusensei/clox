@@ -354,4 +354,4 @@ MigrationBackup/
 
 out/
 *.lox
-run.cmd
+*.cmd
