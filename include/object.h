@@ -13,6 +13,18 @@ struct GC;
 struct ObjFunction;
 struct ObjUpvalue;
 
+std::string_view nameof(ObjType type);
+std::ostream& operator<<(std::ostream& out, const Obj& obj);
+void register_obj(std::unique_ptr<Obj, ObjDeleter>& obj, GC& gc);
+
+template<typename T, template<typename>typename Alloc = Allocator>
+auto delete_obj(Alloc<T>& a, T* ptr)
+->typename std::enable_if_t<std::is_base_of_v<Obj, T>, void>
+{
+	AllocTraits<T>::destroy(a, ptr);
+	AllocTraits<T>::deallocate(a, ptr, 1);
+}
+
 struct ObjClosure final :public Obj
 {
 	ObjFunction* const function;
@@ -22,9 +34,7 @@ struct ObjClosure final :public Obj
 
 	constexpr size_t upvalue_count()const noexcept { return upvalues.size(); }
 };
-
 std::ostream& operator<<(std::ostream& out, const ObjClosure& s);
-[[nodiscard]] ObjClosure* create_obj_closure(ObjFunction* func, GC& gc);
 
 struct ObjFunction final : public Obj
 {
@@ -35,9 +45,7 @@ struct ObjFunction final : public Obj
 
 	ObjFunction() :Obj(ObjType::Function) {}
 };
-
 std::ostream& operator<<(std::ostream& out, const ObjFunction& f);
-[[nodiscard]] ObjFunction* create_obj_function(GC& gc);
 
 using NativeFn = Value(*)(uint8_t arg_count, Value * args);
 
@@ -50,9 +58,7 @@ struct ObjNative final :public Obj
 	{
 	}
 };
-
 std::ostream& operator<<(std::ostream& out, const ObjNative& s);
-[[nodiscard]] ObjNative* create_obj_native(NativeFn func, GC& gc);
 
 struct ObjUpvalue final :public Obj
 {
@@ -65,19 +71,42 @@ struct ObjUpvalue final :public Obj
 	{
 	}
 };
-
 std::ostream& operator<<(std::ostream& out, const ObjUpvalue& s);
-[[nodiscard]] ObjUpvalue* create_obj_upvalue(Value* slot, GC& gc);
 
 template<typename T, template<typename> typename Alloc = Allocator, typename... Args>
-decltype(auto) alloc_ptr(Args... args)
+[[nodiscard]] auto alloc_unique_obj(Args&&... args)
+->typename std::enable_if_t<std::is_base_of_v<Obj, T>, std::unique_ptr<Obj, ObjDeleter>>
 {
 	static Alloc<T> a;
 
 	auto p = AllocTraits<T>::allocate(a, 1);
 	AllocTraits<T>::construct(a, p, std::forward<Args>(args)...);
 
-	return p;
+#ifdef DEBUG_LOG_GC
+	std::cout << (void*)p << " allocate " << sizeof(T);
+	std::cout << " for " << nameof(p->type) << '\n';
+#endif // DEBUG_LOG_GC
+
+	auto deleter = [](Obj* ptr)
+	{
+#ifdef DEBUG_LOG_GC
+		std::cout << (void*)ptr << " free type " << nameof(ptr->type) << '\n';
+#endif // DEBUG_LOG_GC
+
+		delete_obj(a, static_cast<T*>(ptr));
+	};
+
+	return { p, deleter };
+}
+
+template<typename T, typename... Args>
+[[nodiscard]] auto create_obj(GC& gc, Args&&... args)
+->typename std::enable_if_t<std::is_base_of_v<Obj, T>, T*>
+{
+	auto p = alloc_unique_obj<T>(std::forward<Args>(args)...);
+	auto res = p.get();
+	register_obj(p, gc);
+	return static_cast<T*>(res);
 }
 
 } //Clox

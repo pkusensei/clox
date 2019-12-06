@@ -557,7 +557,7 @@ void Compilation::init_compiler(FunctionType type)
 	auto compiler = std::make_unique<Compiler>();
 	compiler->enclosing = std::move(current);
 	current = std::move(compiler);
-	current->function = create_obj_function(vm.gc);
+	current->function = create_obj<ObjFunction>(vm.gc);
 	current->type = type;
 
 	if (type != FunctionType::Script)

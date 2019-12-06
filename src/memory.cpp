@@ -137,12 +137,12 @@ void GC::blacken_object(Obj* ptr)
 
 void GC::remove_white_string()
 {
-	std::for_each(strings.begin(), strings.end(),
-		[this](auto str)
-		{
-			if (str != nullptr && !str->is_marked)
-				strings.erase(str);
-		});
+	for (auto it = strings.begin(); it != strings.end();)
+	{
+		if ((*it) != nullptr && !(*it)->is_marked)
+			it = strings.erase(it);
+		else ++it;
+	}
 }
 
 void GC::sweep()
@@ -158,13 +158,14 @@ void GC::sweep()
 			object = object->next.get();
 		} else
 		{
+			decltype(object->next) temp = std::move(object->next);
 			if (previous == nullptr)
 			{
-				objects = std::move(object->next);
+				objects = std::move(temp);
 				object = objects.get();
 			} else
 			{
-				previous->next = std::move(object->next);
+				previous->next = std::move(temp);
 				object = previous->next.get();
 			}
 		}

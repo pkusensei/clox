@@ -5,8 +5,6 @@
 
 namespace Clox {
 
-struct GC;
-
 struct Obj;
 
 enum class ObjType
@@ -18,10 +16,7 @@ enum class ObjType
 	Upvalue
 };
 
-struct ObjDeleter
-{
-	void operator()(Obj* ptr) const;
-};
+using ObjDeleter = std::function<void(Obj*)>;
 
 struct Obj
 {
@@ -37,8 +32,5 @@ struct Obj
 protected:
 	constexpr Obj(ObjType type) noexcept :type(type) {}
 };
-
-std::ostream& operator<<(std::ostream& out, const Obj& obj);
-void register_obj(Obj* obj, GC& gc);
 
 } //Clox

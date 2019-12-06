@@ -44,7 +44,7 @@ InterpretResult VM::interpret(std::string_view source)
 		return InterpretResult::CompileError;
 
 	push(function);
-	auto closure = create_obj_closure(function, gc);
+	auto closure = create_obj<ObjClosure>(gc, function);
 	pop();
 	push(closure);
 	static_cast<void>(call_value(closure, 0));
@@ -224,7 +224,7 @@ InterpretResult VM::run()
 			case OpCode::Closure:
 			{
 				auto function = frame->read_constant().as_function();
-				auto closure = create_obj_closure(function, gc);
+				auto closure = create_obj<ObjClosure>(gc, function);
 				push(closure);
 				for (size_t i = 0; i < closure->upvalue_count(); i++)
 				{
@@ -275,7 +275,7 @@ ObjUpvalue* VM::captured_upvalue(Value* local)
 	if (upvalue != nullptr && upvalue->location == local)
 		return upvalue;
 
-	auto created = create_obj_upvalue(local, gc);
+	auto created = create_obj<ObjUpvalue>(gc, local);
 	created->next = upvalue;
 	if (prev_upvalue == nullptr)
 		open_upvalues = created;
@@ -343,7 +343,7 @@ bool VM::call_value(const Value& callee, uint8_t arg_count)
 void VM::define_native(std::string_view name, NativeFn function)
 {
 	push(create_obj_string(name, *this));
-	push(create_obj_native(function, gc));
+	push(create_obj<ObjNative>(gc, function));
 	globals.insert_or_assign(stack.at(0).as_string(), stack.at(1));
 	pop();
 	pop();

@@ -25,13 +25,14 @@ template<typename T>
 	if (interned != nullptr)
 		return interned;
 
-	auto p = alloc_ptr<ObjString>();
-	p->content = std::forward<T>(str);
-	vm.push(p);
-	vm.gc.strings.emplace(p);
+	auto p = alloc_unique_obj<ObjString>();
+	auto res = static_cast<ObjString*>(p.get());
+	res->content = std::forward<T>(str);
+	vm.push(res);
+	vm.gc.strings.emplace(res);
 	register_obj(p, vm.gc);
 	vm.pop();
-	return p;
+	return res;
 }
 
 } // Clox

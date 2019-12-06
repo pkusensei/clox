@@ -14,10 +14,6 @@
 #define DEBUG_LOG_GC
 #endif // _DEBUG
 
-#ifdef DEBUG_LOG_GC
-#include"debug.h"
-#endif // DEBUG_LOG_GC
-
 namespace Clox {
 
 struct ObjString;
@@ -47,11 +43,6 @@ struct Allocator :public AllocBase
 
 	using value_type = T;
 
-	using worker = std::allocator<T>;
-	using worker_traits = std::allocator_traits<worker>;
-
-	static worker a;
-
 	constexpr Allocator()noexcept {}
 	constexpr Allocator(const Allocator&)noexcept = default;
 	template<typename U>
@@ -60,9 +51,6 @@ struct Allocator :public AllocBase
 	[[nodiscard]] constexpr T* allocate(std::size_t n);
 	constexpr void deallocate(T* p, std::size_t n);
 };
-
-template<typename T>
-inline typename Allocator<T>::worker Allocator<T>::a{};
 
 template<typename T>
 using AllocTraits = std::allocator_traits<Allocator<T>>;
@@ -119,38 +107,44 @@ public:
 template<typename T>
 [[nodiscard]] constexpr T* Allocator<T>::allocate(std::size_t n)
 {
+	auto alloc_size = n * sizeof(T);
+	auto p = static_cast<T*>(::operator new(alloc_size));
+
 	if (gc != nullptr)
 	{
-		gc->bytes_allocated += sizeof(T) * n;
+		gc->bytes_allocated += alloc_size;
 
 #ifdef DEBUG_STRESS_GC
 		gc->collect();
 #endif // DEBUG_STRESS_GC
 
+#ifndef DEBUG_STRESS_GC
 		if (gc->bytes_allocated > gc->next_gc)
 			gc->collect();
+#endif // !DEBUG_STRESS_GC
+
 	}
-	return worker_traits::allocate(a, n);
+	return p;
 }
 
 template<typename T>
 constexpr void Allocator<T>::deallocate(T* p, std::size_t n)
 {
+	::operator delete(p);
 	if (gc != nullptr)
 		gc->bytes_allocated -= sizeof(T) * n;
-	worker_traits::deallocate(a, p, n);
 }
 
 template<typename T, typename U>
 [[nodiscard]] bool operator==(const Allocator<T>& t, const Allocator<U>& u)noexcept
 {
-	return std::is_same_v<T, U>;
+	return true;
 }
 
 template<typename T, typename U>
 [[nodiscard]] bool operator!=(const Allocator<T>& t, const Allocator<U>& u)noexcept
 {
-	return !(t == u);
+	return false;
 }
 
 } //Clox
