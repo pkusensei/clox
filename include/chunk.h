@@ -9,7 +9,7 @@
 
 namespace Clox {
 
-constexpr auto UINT8_COUNT = UINT8_MAX + 1;
+constexpr auto UINT8_COUNT = std::numeric_limits<uint8_t>::max() + 1;
 
 enum class OpCode :uint8_t
 {

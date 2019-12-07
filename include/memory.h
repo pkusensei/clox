@@ -1,10 +1,10 @@
 #pragma once
 
 #include <algorithm>
+#include <deque>
 #include <map>
 #include <memory>
 #include <set>
-#include <stack>
 
 #include "obj.h"
 #include "value.h"
@@ -61,7 +61,7 @@ struct GC
 {
 	std::unique_ptr<Obj, ObjDeleter> objects = nullptr;
 	std::set<ObjString*, std::less<ObjString*>, Allocator<ObjString*>> strings;
-	std::stack<Obj*> gray_stack;
+	std::deque<Obj*> gray_stack;
 
 	size_t bytes_allocated = 0;
 	size_t next_gc = 1024 * 1024;

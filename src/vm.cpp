@@ -14,17 +14,6 @@
 
 namespace Clox {
 
-#define BINARY_OP(op) \
-do{\
-		if(!peek(0).is_number() || !peek(1).is_number()){\
-			runtime_error("Operands must be numbers.");\
-			return InterpretResult::RuntimeError;\
-		}\
-		double b = pop().as<double>(); \
-		double a = pop().as<double>(); \
-		push(a op b); \
-} while (false)
-
 Value clock_native([[maybe_unused]] uint8_t arg_count, [[maybe_unused]] Value* args)noexcept
 {
 	auto tp = std::chrono::high_resolution_clock::now().time_since_epoch();
@@ -63,6 +52,18 @@ VM::VM()
 
 InterpretResult VM::run()
 {
+
+#define BINARY_OP(op) \
+do{\
+		if(!peek(0).is_number() || !peek(1).is_number()){\
+			runtime_error("Operands must be numbers.");\
+			return InterpretResult::RuntimeError;\
+		}\
+		double b = pop().as<double>(); \
+		double a = pop().as<double>(); \
+		push(a op b); \
+} while (false);
+
 	auto* frame = &frames.at(frame_count - 1);
 
 	while (true)
@@ -260,6 +261,8 @@ InterpretResult VM::run()
 				break;
 		}
 	}
+
+#undef BINARY_OP
 }
 
 ObjUpvalue* VM::captured_upvalue(Value* local)

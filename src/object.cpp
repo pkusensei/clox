@@ -46,7 +46,7 @@ std::ostream& operator<<(std::ostream& out, const Obj& obj)
 			out << static_cast<const ObjUpvalue&>(obj);
 			break;
 		default:
-			break;
+			throw std::invalid_argument("Unexpected ObjType:: Output failed");
 	}
 	return out;
 }

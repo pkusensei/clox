@@ -33,8 +33,8 @@ void GC::collect()
 
 void GC::mark_roots()
 {
-	for (auto& slot : vm.stack)
-		mark_value(slot);
+	for (auto slot = vm.stack.data(); slot < vm.stacktop; ++slot)
+		mark_value(*slot);
 
 	for (size_t i = 0; i < vm.frame_count; i++)
 		mark_object(std::remove_const_t<ObjClosure*>(vm.frames.at(i).closure));
@@ -73,7 +73,7 @@ void GC::mark_object(Obj* ptr)
 #endif // DEBUG_LOG_GC
 
 	ptr->is_marked = true;
-	gray_stack.push(ptr);
+	gray_stack.push_back(ptr);
 }
 
 void GC::mark_value(const Value& value)
@@ -95,9 +95,9 @@ void GC::trace_references()
 {
 	while (!gray_stack.empty())
 	{
-		auto obj = gray_stack.top();
+		auto obj = gray_stack.front();
 		blacken_object(obj);
-		gray_stack.pop();
+		gray_stack.pop_front();
 	}
 }
 
@@ -139,7 +139,7 @@ void GC::remove_white_string()
 {
 	for (auto it = strings.begin(); it != strings.end();)
 	{
-		if ((*it) != nullptr && !(*it)->is_marked)
+		if (*it != nullptr && !(*it)->is_marked)
 			it = strings.erase(it);
 		else ++it;
 	}

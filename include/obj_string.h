@@ -27,8 +27,8 @@ template<typename T>
 
 	auto p = alloc_unique_obj<ObjString>();
 	auto res = static_cast<ObjString*>(p.get());
-	res->content = std::forward<T>(str);
 	vm.push(res);
+	res->content = std::forward<T>(str);
 	vm.gc.strings.emplace(res);
 	register_obj(p, vm.gc);
 	vm.pop();
