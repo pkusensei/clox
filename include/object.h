@@ -15,7 +15,7 @@ struct ObjUpvalue;
 
 std::string_view nameof(ObjType type);
 std::ostream& operator<<(std::ostream& out, const Obj& obj);
-void register_obj(std::unique_ptr<Obj, ObjDeleter>& obj, GC& gc);
+void register_obj(std::unique_ptr<Obj, ObjDeleter>& obj, GC& gc)noexcept;
 
 template<typename T, template<typename>typename Alloc = Allocator>
 auto delete_obj(Alloc<T>& a, T* ptr)

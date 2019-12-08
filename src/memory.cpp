@@ -24,10 +24,13 @@ void GC::collect()
 
 #ifdef DEBUG_LOG_GC
 	std::cout << "-- gc end\n";
-	std::cout << "   collected " << before - bytes_allocated;
-	std::cout << " bytes (from " << before;
-	std::cout << " to " << bytes_allocated << ") next at ";
-	std::cout << next_gc << '\n';
+	if (before > bytes_allocated)
+	{
+		std::cout << "   collected " << before - bytes_allocated;
+		std::cout << " bytes (from " << before;
+		std::cout << " to " << bytes_allocated << ") next at ";
+		std::cout << next_gc << '\n';
+	}
 #endif // DEBUG_LOG_GC
 }
 
@@ -135,7 +138,7 @@ void GC::blacken_object(Obj* ptr)
 	}
 }
 
-void GC::remove_white_string()
+void GC::remove_white_string()noexcept
 {
 	for (auto it = strings.begin(); it != strings.end();)
 	{

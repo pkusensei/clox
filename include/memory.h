@@ -24,17 +24,15 @@ struct GC;
 struct AllocBase
 {
 protected:
-	static GC* gc;
+	inline static GC* gc = nullptr;
 
 public:
-	static void init(GC* value)
+	static void init(GC* value)noexcept
 	{
 		if (gc == nullptr && value != nullptr)
 			gc = value;
 	}
 };
-
-inline GC* AllocBase::gc = nullptr;
 
 template<typename T>
 struct Allocator :public AllocBase
@@ -49,7 +47,7 @@ struct Allocator :public AllocBase
 	constexpr Allocator(const Allocator<U>&) noexcept {}
 
 	[[nodiscard]] constexpr T* allocate(std::size_t n);
-	constexpr void deallocate(T* p, std::size_t n);
+	constexpr void deallocate(T* p, std::size_t n)noexcept;
 };
 
 template<typename T>
@@ -85,7 +83,7 @@ private:
 
 	void trace_references();
 	void blacken_object(Obj* ptr);
-	void remove_white_string();
+	void remove_white_string()noexcept;
 
 	void sweep();
 
@@ -116,19 +114,17 @@ template<typename T>
 
 #ifdef DEBUG_STRESS_GC
 		gc->collect();
-#endif // DEBUG_STRESS_GC
-
-#ifndef DEBUG_STRESS_GC
+#else
 		if (gc->bytes_allocated > gc->next_gc)
 			gc->collect();
-#endif // !DEBUG_STRESS_GC
+#endif // DEBUG_STRESS_GC
 
 	}
 	return p;
 }
 
 template<typename T>
-constexpr void Allocator<T>::deallocate(T* p, std::size_t n)
+constexpr void Allocator<T>::deallocate(T* p, std::size_t n)noexcept
 {
 	::operator delete(p);
 	if (gc != nullptr)

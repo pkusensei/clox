@@ -51,7 +51,7 @@ std::ostream& operator<<(std::ostream& out, const Obj& obj)
 	return out;
 }
 
-void register_obj(std::unique_ptr<Obj, ObjDeleter>& obj, GC& gc)
+void register_obj(std::unique_ptr<Obj, ObjDeleter>& obj, GC& gc)noexcept
 {
 	obj->next = std::move(gc.objects);
 	gc.objects = std::move(obj);
