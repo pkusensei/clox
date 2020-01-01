@@ -15,13 +15,8 @@ template<typename T, typename... Args>
 void err_print(T&& t, Args&&... args)
 {
 	std::cerr << std::forward<T>(t);
-	err_print(std::forward<Args>(args)...);
-}
-
-template<typename T>
-void err_print(T&& t)
-{
-	std::cerr << std::forward<T>(t);
+	if constexpr (sizeof...(Args) > 0)
+		err_print(std::forward<Args>(args)...);
 }
 
 enum class InterpretResult

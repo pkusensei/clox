@@ -35,11 +35,14 @@ public:
 };
 
 template<typename T>
-struct Allocator :public AllocBase
+struct Allocator final :public AllocBase
 {
 	static_assert(!std::is_const_v<T>);
 
 	using value_type = T;
+
+	inline static std::allocator<T> worker = {};
+	using worker_traits = std::allocator_traits<decltype(worker)>;
 
 	constexpr Allocator()noexcept {}
 	constexpr Allocator(const Allocator&)noexcept = default;
@@ -106,7 +109,7 @@ template<typename T>
 [[nodiscard]] constexpr T* Allocator<T>::allocate(std::size_t n)
 {
 	auto alloc_size = n * sizeof(T);
-	auto p = static_cast<T*>(::operator new(alloc_size));
+	auto p = worker_traits::allocate(worker, n);
 
 	if (gc != nullptr)
 	{
@@ -126,7 +129,7 @@ template<typename T>
 template<typename T>
 constexpr void Allocator<T>::deallocate(T* p, std::size_t n)noexcept
 {
-	::operator delete(p);
+	worker_traits::deallocate(worker, p, n);
 	if (gc != nullptr)
 		gc->bytes_allocated -= sizeof(T) * n;
 }

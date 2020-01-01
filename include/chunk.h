@@ -88,7 +88,7 @@ struct ChunkT
 
 }
 
-struct Chunk :public ChunkT<>
+struct Chunk final :public ChunkT<>
 {
 };
 
