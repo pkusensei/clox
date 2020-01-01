@@ -27,6 +27,8 @@ auto delete_obj(Alloc<T>& a, T* ptr)
 
 struct ObjClass final :public Obj
 {
+	constexpr static auto obj_type = ObjType::Class;
+
 	ObjString* const name;
 
 	constexpr ObjClass(ObjString* name) noexcept
@@ -38,6 +40,8 @@ std::ostream& operator<<(std::ostream& out, const ObjClass& c);
 
 struct ObjClosure final :public Obj
 {
+	constexpr static auto obj_type = ObjType::Closure;
+
 	ObjFunction* const function;
 	std::vector<ObjUpvalue*, Allocator<ObjUpvalue*>> upvalues;
 
@@ -49,6 +53,8 @@ std::ostream& operator<<(std::ostream& out, const ObjClosure& s);
 
 struct ObjFunction final : public Obj
 {
+	constexpr static auto obj_type = ObjType::Function;
+
 	size_t arity = 0;
 	size_t upvalue_count = 0;
 	Chunk chunk;
@@ -60,6 +66,8 @@ std::ostream& operator<<(std::ostream& out, const ObjFunction& f);
 
 struct ObjInstance final :public Obj
 {
+	constexpr static auto obj_type = ObjType::Instance;
+
 	ObjClass* const klass;
 	table fields;
 
@@ -74,6 +82,8 @@ using NativeFn = Value(*)(uint8_t arg_count, Value * args);
 
 struct ObjNative final :public Obj
 {
+	constexpr static auto obj_type = ObjType::Native;
+
 	NativeFn function;
 
 	constexpr ObjNative(NativeFn func)noexcept
@@ -85,6 +95,8 @@ std::ostream& operator<<(std::ostream& out, const ObjNative& s);
 
 struct ObjUpvalue final :public Obj
 {
+	constexpr static auto obj_type = ObjType::Upvalue;
+
 	Value* location;
 	Value closed;
 	ObjUpvalue* next = nullptr;

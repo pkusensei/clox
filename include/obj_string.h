@@ -9,6 +9,8 @@ using clox_string = std::basic_string<char, std::char_traits<char>, Allocator<ch
 
 struct ObjString final :public Obj
 {
+	constexpr static auto obj_type = ObjType::String;
+
 	clox_string content;
 
 	ObjString()noexcept :Obj(ObjType::String) {}

@@ -41,18 +41,20 @@ struct Value
 	}
 
 	[[nodiscard]] bool is_obj_type(ObjType type)const;
-	[[nodiscard]] bool is_class()const;
-	[[nodiscard]] bool is_closure()const;
-	[[nodiscard]] bool is_function()const;
-	[[nodiscard]] bool is_instance()const;
-	[[nodiscard]] bool is_native()const;
-	[[nodiscard]] bool is_string()const;
-	[[nodiscard]] ObjClass* as_class()const;
-	[[nodiscard]] ObjClosure* as_closure()const;
-	[[nodiscard]] ObjFunction* as_function()const;
-	[[nodiscard]] ObjInstance* as_instance()const;
-	[[nodiscard]] ObjNative* as_native()const;
-	[[nodiscard]] ObjString* as_string()const;
+
+	template<typename U>
+	[[nodiscard]] auto as_obj()const
+		->typename std::enable_if_t<std::is_base_of_v<Obj, U> && !std::is_same_v<Obj, U>, U*>
+	{
+		try
+		{
+			return static_cast<U*>(as<Obj*>());
+		} catch (...)
+		{
+			throw std::invalid_argument(std::string("Value is not ") + nameof(U::obj_type).data());
+		}
+	}
+
 };
 
 constexpr bool operator==(const Value& v1, const Value& v2)noexcept

@@ -106,7 +106,8 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset)
 			std::cout << std::setw(4) << static_cast<unsigned>(constant) << ' ';
 			std::cout << chunk.constants.values.at(constant) << '\n';
 
-			auto function = chunk.constants.values.at(constant).as_function();
+			auto function =
+				chunk.constants.values.at(constant).as_obj<ObjFunction>();
 			for (size_t j = 0; j < function->upvalue_count; j++)
 			{
 				auto is_local = chunk.code.at(offset++);

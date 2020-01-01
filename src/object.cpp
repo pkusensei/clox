@@ -12,19 +12,19 @@ std::string_view nameof(ObjType type)
 	switch (type)
 	{
 		case ObjType::Class:
-			return "ObjClass"sv;
+			return "class"sv;
 		case ObjType::Closure:
-			return "ObjClosure"sv;
+			return "closure"sv;
 		case ObjType::Function:
-			return "ObjFunction"sv;
+			return "function"sv;
 		case ObjType::Instance:
-			return "ObjInstance"sv;
+			return "instance"sv;
 		case ObjType::Native:
-			return "ObjNative"sv;
+			return "native"sv;
 		case ObjType::String:
-			return "ObjString"sv;
+			return "string"sv;
 		case ObjType::Upvalue:
-			return "ObjUpvalue"sv;
+			return "upvalue"sv;
 		default:
 			throw std::invalid_argument("Unexpected ObjType: nameof");
 	}

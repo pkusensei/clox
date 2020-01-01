@@ -160,10 +160,11 @@ do{\
 			case OpCode::Less: BINARY_OP(< ); break;
 			case OpCode::Add:
 			{
-				if (peek(0).is_string() && peek(1).is_string())
+				if (peek(0).is_obj_type(ObjType::String)
+					&& peek(1).is_obj_type(ObjType::String))
 				{
-					auto b = peek(0).as_string();
-					auto a = peek(1).as_string();
+					auto b = peek(0).as_obj<ObjString>();
+					auto a = peek(1).as_obj<ObjString>();
 					auto res = create_obj_string((*a) + (*b), *this);
 					pop();
 					pop();
@@ -224,7 +225,7 @@ do{\
 			}
 			case OpCode::Closure:
 			{
-				auto function = frame->read_constant().as_function();
+				auto function = frame->read_constant().as_obj<ObjFunction>();
 				auto closure = create_obj<ObjClosure>(gc, function);
 				push(closure);
 				for (size_t i = 0; i < closure->upvalue_count(); i++)
@@ -330,15 +331,15 @@ bool VM::call_value(const Value& callee, uint8_t arg_count)
 		{
 			case ObjType::Class:
 			{
-				auto klass = callee.as_class();
+				auto klass = callee.as_obj<ObjClass>();
 				stacktop[-arg_count - 1] = create_obj<ObjInstance>(gc, klass);
 				return true;
 			}
 			case ObjType::Closure:
-				return call(callee.as_closure(), arg_count);
+				return call(callee.as_obj<ObjClosure>(), arg_count);
 			case ObjType::Native:
 			{
-				auto native = callee.as_native()->function;
+				auto native = callee.as_obj<ObjNative>()->function;
 				auto result = native(arg_count, stacktop - arg_count);
 				stacktop -= arg_count + 1;
 				push(result);
@@ -356,7 +357,7 @@ void VM::define_native(std::string_view name, NativeFn function)
 {
 	push(create_obj_string(name, *this));
 	push(create_obj<ObjNative>(gc, function));
-	globals.insert_or_assign(stack.at(0).as_string(), stack.at(1));
+	globals.insert_or_assign(stack.at(0).as_obj<ObjString>(), stack.at(1));
 	pop();
 	pop();
 }
@@ -411,7 +412,7 @@ uint16_t CallFrame::read_short()
 
 ObjString* CallFrame::read_string()
 {
-	return read_constant().as_string();
+	return read_constant().as_obj<ObjString>();
 }
 
 } //Clox
