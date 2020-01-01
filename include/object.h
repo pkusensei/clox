@@ -24,18 +24,18 @@ auto delete_obj(Alloc<T>& a, T* ptr)
 	AllocTraits<T>::deallocate(a, ptr, 1);
 }
 
-struct ObjClass final :public ObjT<ObjClass>
+struct ObjClass final :public Obj
 {
 	ObjString* const name;
 
 	constexpr ObjClass(ObjString* name) noexcept
-		:ObjT(ObjType::Class), name(name)
+		:Obj(ObjType::Class), name(name)
 	{
 	}
 };
 std::ostream& operator<<(std::ostream& out, const ObjClass& c);
 
-struct ObjClosure final :public ObjT<ObjClosure>
+struct ObjClosure final :public Obj
 {
 	ObjFunction* const function;
 	std::vector<ObjUpvalue*, Allocator<ObjUpvalue*>> upvalues;
@@ -46,24 +46,24 @@ struct ObjClosure final :public ObjT<ObjClosure>
 };
 std::ostream& operator<<(std::ostream& out, const ObjClosure& s);
 
-struct ObjFunction final : public ObjT<ObjFunction>
+struct ObjFunction final : public Obj
 {
 	size_t arity = 0;
 	size_t upvalue_count = 0;
 	Chunk chunk;
 	ObjString* name = nullptr;
 
-	ObjFunction() :ObjT(ObjType::Function) {}
+	ObjFunction() :Obj(ObjType::Function) {}
 };
 std::ostream& operator<<(std::ostream& out, const ObjFunction& f);
 
-struct ObjInstance final :public ObjT<ObjInstance>
+struct ObjInstance final :public Obj
 {
 	ObjClass* const klass;
 	table fields;
 
 	ObjInstance(ObjClass* klass)
-		:ObjT(ObjType::Instance), klass(klass)
+		:Obj(ObjType::Instance), klass(klass)
 	{
 	}
 };
@@ -71,25 +71,25 @@ std::ostream& operator<<(std::ostream& out, const ObjInstance& ins);
 
 using NativeFn = Value(*)(uint8_t arg_count, Value * args);
 
-struct ObjNative final :public ObjT<ObjNative>
+struct ObjNative final :public Obj
 {
 	NativeFn function;
 
 	constexpr ObjNative(NativeFn func)noexcept
-		:ObjT(ObjType::Native), function(func)
+		:Obj(ObjType::Native), function(func)
 	{
 	}
 };
 std::ostream& operator<<(std::ostream& out, const ObjNative& s);
 
-struct ObjUpvalue final :public ObjT<ObjUpvalue>
+struct ObjUpvalue final :public Obj
 {
 	Value* location;
 	Value closed;
 	ObjUpvalue* next = nullptr;
 
 	constexpr ObjUpvalue(Value* slot)noexcept
-		:ObjT(ObjType::Upvalue), location(slot)
+		:Obj(ObjType::Upvalue), location(slot)
 	{
 	}
 };

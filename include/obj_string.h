@@ -7,11 +7,11 @@ namespace Clox {
 
 using clox_string = std::basic_string<char, std::char_traits<char>, Allocator<char>>;
 
-struct ObjString final :public ObjT<ObjString>
+struct ObjString final :public Obj
 {
 	clox_string content;
 
-	ObjString()noexcept :ObjT(ObjType::String) {}
+	ObjString()noexcept :Obj(ObjType::String) {}
 	std::string_view text()const { return content; }
 };
 

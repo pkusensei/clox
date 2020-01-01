@@ -35,16 +35,4 @@ protected:
 	constexpr Obj(ObjType type) noexcept :type(type) {}
 };
 
-template<typename Derived>
-struct ObjT :public Obj
-{
-	using Derived = Derived;
-
-protected:
-	constexpr explicit ObjT(ObjType type)noexcept
-		:Obj(type)
-	{
-	}
-};
-
 } //Clox

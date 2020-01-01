@@ -43,7 +43,7 @@ void register_obj(std::unique_ptr<Obj, ObjDeleter>& obj, GC& gc)noexcept
 }
 
 ObjClosure::ObjClosure(ObjFunction* func)
-	:ObjT(ObjType::Closure), function(func), upvalues(func->upvalue_count, nullptr)
+	:Obj(ObjType::Closure), function(func), upvalues(func->upvalue_count, nullptr)
 {
 }
 

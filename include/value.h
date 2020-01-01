@@ -64,7 +64,7 @@ struct Value
 		} catch (...)
 		{
 			throw std::invalid_argument(std::string("Value is not ")
-				+ nameof<typename U::Derived>().data());
+				+ nameof<U>().data());
 		}
 	}
 
