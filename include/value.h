@@ -11,6 +11,7 @@ struct Obj;
 struct ObjClass;
 struct ObjClosure;
 struct ObjFunction;
+struct ObjInstance;
 struct ObjNative;
 struct ObjString;
 
@@ -43,11 +44,13 @@ struct Value
 	[[nodiscard]] bool is_class()const;
 	[[nodiscard]] bool is_closure()const;
 	[[nodiscard]] bool is_function()const;
+	[[nodiscard]] bool is_instance()const;
 	[[nodiscard]] bool is_native()const;
 	[[nodiscard]] bool is_string()const;
 	[[nodiscard]] ObjClass* as_class()const;
 	[[nodiscard]] ObjClosure* as_closure()const;
 	[[nodiscard]] ObjFunction* as_function()const;
+	[[nodiscard]] ObjInstance* as_instance()const;
 	[[nodiscard]] ObjNative* as_native()const;
 	[[nodiscard]] ObjString* as_string()const;
 };

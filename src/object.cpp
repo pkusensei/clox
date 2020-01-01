@@ -17,6 +17,8 @@ std::string_view nameof(ObjType type)
 			return "ObjClosure"sv;
 		case ObjType::Function:
 			return "ObjFunction"sv;
+		case ObjType::Instance:
+			return "ObjInstance"sv;
 		case ObjType::Native:
 			return "ObjNative"sv;
 		case ObjType::String:
@@ -40,6 +42,9 @@ std::ostream& operator<<(std::ostream& out, const Obj& obj)
 			break;
 		case ObjType::Function:
 			out << static_cast<const ObjFunction&>(obj);
+			break;
+		case ObjType::Instance:
+			out << static_cast<const ObjInstance&>(obj);
 			break;
 		case ObjType::Native:
 			out << static_cast<const ObjNative&>(obj);
@@ -85,6 +90,12 @@ std::ostream& operator<<(std::ostream& out, const ObjFunction& f)
 		out << "<script>";
 	else
 		out << "<fn " << *f.name << ">";
+	return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const ObjInstance& ins)
+{
+	out << *ins.klass << " instance";
 	return out;
 }
 

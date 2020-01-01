@@ -134,6 +134,13 @@ void GC::blacken_object(Obj* ptr)
 			mark_array(function->chunk.constants);
 			break;
 		}
+		case ObjType::Instance:
+		{
+			auto instance = static_cast<ObjInstance*>(ptr);
+			mark_object(instance->klass);
+			mark_table(instance->fields);
+			break;
+		}
 		case ObjType::Upvalue:
 			mark_value(static_cast<ObjUpvalue*>(ptr)->closed);
 			break;

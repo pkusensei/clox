@@ -2,12 +2,11 @@
 
 #include <algorithm>
 #include <deque>
-#include <map>
 #include <memory>
 #include <set>
 
 #include "obj.h"
-#include "value.h"
+#include "table.h"
 
 #ifdef _DEBUG
 #define DEBUG_STRESS_GC
@@ -55,8 +54,6 @@ struct Allocator final :public AllocBase
 
 template<typename T>
 using AllocTraits = std::allocator_traits<Allocator<T>>;
-
-using table = std::map<ObjString*, Value, std::less<ObjString*>, Allocator<std::pair<ObjString* const, Value>>>;
 
 struct GC
 {

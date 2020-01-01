@@ -328,6 +328,12 @@ bool VM::call_value(const Value& callee, uint8_t arg_count)
 	{
 		switch (callee.as<Obj*>()->type)
 		{
+			case ObjType::Class:
+			{
+				auto klass = callee.as_class();
+				stacktop[-arg_count - 1] = create_obj<ObjInstance>(gc, klass);
+				return true;
+			}
 			case ObjType::Closure:
 				return call(callee.as_closure(), arg_count);
 			case ObjType::Native:

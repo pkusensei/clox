@@ -4,7 +4,7 @@
 
 #include "chunk.h"
 #include "obj.h"
-#include "value.h"
+#include "table.h"
 
 namespace Clox {
 
@@ -57,6 +57,18 @@ struct ObjFunction final : public Obj
 	ObjFunction() :Obj(ObjType::Function) {}
 };
 std::ostream& operator<<(std::ostream& out, const ObjFunction& f);
+
+struct ObjInstance final :public Obj
+{
+	ObjClass* const klass;
+	table fields;
+
+	ObjInstance(ObjClass* klass)
+		:Obj(ObjType::Instance), klass(klass)
+	{
+	}
+};
+std::ostream& operator<<(std::ostream& out, const ObjInstance& ins);
 
 using NativeFn = Value(*)(uint8_t arg_count, Value * args);
 

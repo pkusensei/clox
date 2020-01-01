@@ -12,6 +12,7 @@ enum class ObjType
 	Class,
 	Closure,
 	Function,
+	Instance,
 	Native,
 	String,
 	Upvalue

@@ -47,6 +47,11 @@ bool Value::is_function() const
 	return is_obj_type(ObjType::Function);
 }
 
+bool Value::is_instance() const
+{
+	return is_obj_type(ObjType::Instance);
+}
+
 bool Value::is_native() const
 {
 	return is_obj_type(ObjType::Native);
@@ -60,7 +65,7 @@ bool Value::is_string() const
 ObjClass* Value::as_class() const
 {
 	if (!is_class())
-		throw std::invalid_argument("Value is not a closure.");
+		throw std::invalid_argument("Value is not a class.");
 	return static_cast<ObjClass*>(as<Obj*>());;
 }
 
@@ -76,6 +81,13 @@ ObjFunction* Value::as_function() const
 	if (!is_function())
 		throw std::invalid_argument("Value is not a function.");
 	return static_cast<ObjFunction*>(as<Obj*>());
+}
+
+ObjInstance* Value::as_instance() const
+{
+	if (!is_instance())
+		throw std::invalid_argument("Value is not an instance.");
+	return static_cast<ObjInstance*>(as<Obj*>());;
 }
 
 ObjNative* Value::as_native() const
