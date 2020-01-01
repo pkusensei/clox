@@ -11,15 +11,17 @@ std::string_view nameof(ObjType type)
 
 	switch (type)
 	{
-		case Clox::ObjType::Closure:
+		case ObjType::Class:
+			return "ObjClass"sv;
+		case ObjType::Closure:
 			return "ObjClosure"sv;
-		case Clox::ObjType::Function:
+		case ObjType::Function:
 			return "ObjFunction"sv;
-		case Clox::ObjType::Native:
+		case ObjType::Native:
 			return "ObjNative"sv;
-		case Clox::ObjType::String:
+		case ObjType::String:
 			return "ObjString"sv;
-		case Clox::ObjType::Upvalue:
+		case ObjType::Upvalue:
 			return "ObjUpvalue"sv;
 		default:
 			throw std::invalid_argument("Unexpected ObjType: nameof");
@@ -30,6 +32,9 @@ std::ostream& operator<<(std::ostream& out, const Obj& obj)
 {
 	switch (obj.type)
 	{
+		case ObjType::Class:
+			out << static_cast<const ObjClass&>(obj);
+			break;
 		case ObjType::Closure:
 			out << static_cast<const ObjClosure&>(obj);
 			break;
@@ -60,6 +65,12 @@ void register_obj(std::unique_ptr<Obj, ObjDeleter>& obj, GC& gc)noexcept
 ObjClosure::ObjClosure(ObjFunction* func)
 	:Obj(ObjType::Closure), function(func), upvalues(func->upvalue_count, nullptr)
 {
+}
+
+std::ostream& operator<<(std::ostream& out, const ObjClass& c)
+{
+	out << *c.name;
+	return out;
 }
 
 std::ostream& operator<<(std::ostream& out, const ObjClosure& s)

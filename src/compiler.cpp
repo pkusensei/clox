@@ -368,7 +368,9 @@ void Compilation::while_statement()
 
 void Compilation::declaration()
 {
-	if (parser->match(TokenType::Fun))
+	if (parser->match(TokenType::Class))
+		class_declaration();
+	else if (parser->match(TokenType::Fun))
 		fun_declaration();
 	else if (parser->match(TokenType::Var))
 		var_declaration();
@@ -377,6 +379,19 @@ void Compilation::declaration()
 
 	if (parser->panic_mode)
 		parser->synchronize();
+}
+
+void Compilation::class_declaration()
+{
+	parser->consume(TokenType::Identifier, "Expect class name.");
+	auto name_constant = identifier_constant(parser->previous);
+	declare_variable();
+
+	emit_byte(OpCode::Class, name_constant);
+	define_variable(name_constant);
+
+	parser->consume(TokenType::LeftBrace, "Expect '{' before class body.");
+	parser->consume(TokenType::RightBrace, "Expect '}' after class body.");
 }
 
 void Compilation::fun_declaration()

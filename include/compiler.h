@@ -136,6 +136,7 @@ private:
 	void while_statement();
 
 	void declaration();
+	void class_declaration();
 	void fun_declaration();
 	void var_declaration();
 	void function(FunctionType type);

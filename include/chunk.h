@@ -41,7 +41,8 @@ enum class OpCode :uint8_t
 	Call,
 	Closure,
 	CloseUpvalue,
-	Return
+	Return,
+	Class
 };
 
 std::string_view nameof(OpCode code);

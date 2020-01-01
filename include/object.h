@@ -25,6 +25,17 @@ auto delete_obj(Alloc<T>& a, T* ptr)
 	AllocTraits<T>::deallocate(a, ptr, 1);
 }
 
+struct ObjClass final :public Obj
+{
+	ObjString* const name;
+
+	constexpr ObjClass(ObjString* name) noexcept
+		:Obj(ObjType::Class), name(name)
+	{
+	}
+};
+std::ostream& operator<<(std::ostream& out, const ObjClass& c);
+
 struct ObjClosure final :public Obj
 {
 	ObjFunction* const function;
@@ -103,6 +114,7 @@ template<typename T, typename... Args>
 [[nodiscard]] auto create_obj(GC& gc, Args&&... args)
 ->typename std::enable_if_t<std::is_base_of_v<Obj, T>, T*>
 {
+	static_assert(std::is_constructible_v<T, Args...>);
 	auto p = alloc_unique_obj<T>(std::forward<Args>(args)...);
 	auto res = p.get();
 	register_obj(p, gc);

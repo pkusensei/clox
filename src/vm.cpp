@@ -257,6 +257,9 @@ do{\
 				frame = &frames.at(frame_count - 1);
 				break;
 			}
+			case OpCode::Class:
+				push(create_obj<ObjClass>(gc, frame->read_string()));
+				break;
 			default:
 				break;
 		}

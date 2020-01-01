@@ -113,6 +113,12 @@ void GC::blacken_object(Obj* ptr)
 
 	switch (ptr->type)
 	{
+		case ObjType::Class:
+		{
+			auto klass = static_cast<ObjClass*>(ptr);
+			mark_object(klass->name);
+			break;
+		}
 		case ObjType::Closure:
 		{
 			auto closure = static_cast<ObjClosure*>(ptr);
