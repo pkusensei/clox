@@ -160,8 +160,8 @@ do{\
 			case OpCode::Less: BINARY_OP(< ); break;
 			case OpCode::Add:
 			{
-				if (peek(0).is_obj_type(ObjType::String)
-					&& peek(1).is_obj_type(ObjType::String))
+				if (peek(0).is_obj_type<ObjString>() 
+					&& peek(1).is_obj_type<ObjString>())
 				{
 					auto b = peek(0).as_obj<ObjString>();
 					auto a = peek(1).as_obj<ObjString>();

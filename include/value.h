@@ -40,7 +40,17 @@ struct Value
 		return std::get<T>(value);
 	}
 
-	[[nodiscard]] bool is_obj_type(ObjType type)const;
+	template<typename U>
+	[[nodiscard]] auto is_obj_type()const
+		->typename std::enable_if_t<std::is_base_of_v<Obj, U> && !std::is_same_v<Obj, U>, bool>
+	{
+		if (is_obj())
+		{
+			auto obj = as<Obj*>();
+			return obj->is_type(objtype_of<U>());
+		}
+		return false;
+	}
 
 	template<typename U>
 	[[nodiscard]] auto as_obj()const
@@ -48,10 +58,13 @@ struct Value
 	{
 		try
 		{
-			return static_cast<U*>(as<Obj*>());
+			if (is_obj_type<U>())
+				return static_cast<U*>(as<Obj*>());
+			else throw;
 		} catch (...)
 		{
-			throw std::invalid_argument(std::string("Value is not ") + nameof(U::obj_type).data());
+			throw std::invalid_argument(std::string("Value is not ")
+				+ nameof<typename U::Derived>().data());
 		}
 	}
 

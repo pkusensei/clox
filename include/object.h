@@ -13,7 +13,6 @@ struct GC;
 struct ObjFunction;
 struct ObjUpvalue;
 
-std::string_view nameof(ObjType type);
 std::ostream& operator<<(std::ostream& out, const Obj& obj);
 void register_obj(std::unique_ptr<Obj, ObjDeleter>& obj, GC& gc)noexcept;
 
@@ -25,23 +24,19 @@ auto delete_obj(Alloc<T>& a, T* ptr)
 	AllocTraits<T>::deallocate(a, ptr, 1);
 }
 
-struct ObjClass final :public Obj
+struct ObjClass final :public ObjT<ObjClass>
 {
-	constexpr static auto obj_type = ObjType::Class;
-
 	ObjString* const name;
 
 	constexpr ObjClass(ObjString* name) noexcept
-		:Obj(ObjType::Class), name(name)
+		:ObjT(ObjType::Class), name(name)
 	{
 	}
 };
 std::ostream& operator<<(std::ostream& out, const ObjClass& c);
 
-struct ObjClosure final :public Obj
+struct ObjClosure final :public ObjT<ObjClosure>
 {
-	constexpr static auto obj_type = ObjType::Closure;
-
 	ObjFunction* const function;
 	std::vector<ObjUpvalue*, Allocator<ObjUpvalue*>> upvalues;
 
@@ -51,28 +46,24 @@ struct ObjClosure final :public Obj
 };
 std::ostream& operator<<(std::ostream& out, const ObjClosure& s);
 
-struct ObjFunction final : public Obj
+struct ObjFunction final : public ObjT<ObjFunction>
 {
-	constexpr static auto obj_type = ObjType::Function;
-
 	size_t arity = 0;
 	size_t upvalue_count = 0;
 	Chunk chunk;
 	ObjString* name = nullptr;
 
-	ObjFunction() :Obj(ObjType::Function) {}
+	ObjFunction() :ObjT(ObjType::Function) {}
 };
 std::ostream& operator<<(std::ostream& out, const ObjFunction& f);
 
-struct ObjInstance final :public Obj
+struct ObjInstance final :public ObjT<ObjInstance>
 {
-	constexpr static auto obj_type = ObjType::Instance;
-
 	ObjClass* const klass;
 	table fields;
 
 	ObjInstance(ObjClass* klass)
-		:Obj(ObjType::Instance), klass(klass)
+		:ObjT(ObjType::Instance), klass(klass)
 	{
 	}
 };
@@ -80,29 +71,25 @@ std::ostream& operator<<(std::ostream& out, const ObjInstance& ins);
 
 using NativeFn = Value(*)(uint8_t arg_count, Value * args);
 
-struct ObjNative final :public Obj
+struct ObjNative final :public ObjT<ObjNative>
 {
-	constexpr static auto obj_type = ObjType::Native;
-
 	NativeFn function;
 
 	constexpr ObjNative(NativeFn func)noexcept
-		:Obj(ObjType::Native), function(func)
+		:ObjT(ObjType::Native), function(func)
 	{
 	}
 };
 std::ostream& operator<<(std::ostream& out, const ObjNative& s);
 
-struct ObjUpvalue final :public Obj
+struct ObjUpvalue final :public ObjT<ObjUpvalue>
 {
-	constexpr static auto obj_type = ObjType::Upvalue;
-
 	Value* location;
 	Value closed;
 	ObjUpvalue* next = nullptr;
 
 	constexpr ObjUpvalue(Value* slot)noexcept
-		:Obj(ObjType::Upvalue), location(slot)
+		:ObjT(ObjType::Upvalue), location(slot)
 	{
 	}
 };
@@ -143,6 +130,51 @@ template<typename T, typename... Args>
 	auto res = p.get();
 	register_obj(p, gc);
 	return static_cast<T*>(res);
+}
+
+template<typename T>
+constexpr auto nameof()
+->typename std::enable_if_t<std::is_base_of_v<Obj, T> && std::is_final_v<T>, std::string_view>
+{
+	using namespace std::literals;
+
+	if constexpr (std::is_same_v<T, ObjClass>)
+		return "class"sv;
+	else if constexpr (std::is_same_v<T, ObjClosure>)
+		return "closure"sv;
+	else if constexpr (std::is_same_v<T, ObjFunction>)
+		return "function"sv;
+	else if constexpr (std::is_same_v<T, ObjInstance>)
+		return "instance"sv;
+	else if constexpr (std::is_same_v<T, ObjNative>)
+		return "native"sv;
+	else if constexpr (std::is_same_v<T, ObjString>)
+		return "string"sv;
+	else if constexpr (std::is_same_v<T, ObjUpvalue>)
+		return "upvalue"sv;
+
+}
+
+template<typename T>
+constexpr auto objtype_of()
+->typename std::enable_if_t<std::is_base_of_v<Obj, T> && std::is_final_v<T>, ObjType>
+{
+	using namespace std::literals;
+
+	if constexpr (std::is_same_v<T, ObjClass>)
+		return ObjType::Class;
+	else if constexpr (std::is_same_v<T, ObjClosure>)
+		return ObjType::Closure;
+	else if constexpr (std::is_same_v<T, ObjFunction>)
+		return ObjType::Function;
+	else if constexpr (std::is_same_v<T, ObjInstance>)
+		return ObjType::Instance;
+	else if constexpr (std::is_same_v<T, ObjNative>)
+		return ObjType::Native;
+	else if constexpr (std::is_same_v<T, ObjString>)
+		return ObjType::String;
+	else if constexpr (std::is_same_v<T, ObjUpvalue>)
+		return ObjType::Upvalue;
 }
 
 } //Clox

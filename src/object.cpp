@@ -5,31 +5,6 @@
 
 namespace Clox {
 
-std::string_view nameof(ObjType type)
-{
-	using namespace std::literals;
-
-	switch (type)
-	{
-		case ObjType::Class:
-			return "class"sv;
-		case ObjType::Closure:
-			return "closure"sv;
-		case ObjType::Function:
-			return "function"sv;
-		case ObjType::Instance:
-			return "instance"sv;
-		case ObjType::Native:
-			return "native"sv;
-		case ObjType::String:
-			return "string"sv;
-		case ObjType::Upvalue:
-			return "upvalue"sv;
-		default:
-			throw std::invalid_argument("Unexpected ObjType: nameof");
-	}
-}
-
 std::ostream& operator<<(std::ostream& out, const Obj& obj)
 {
 	switch (obj.type)
@@ -68,7 +43,7 @@ void register_obj(std::unique_ptr<Obj, ObjDeleter>& obj, GC& gc)noexcept
 }
 
 ObjClosure::ObjClosure(ObjFunction* func)
-	:Obj(ObjType::Closure), function(func), upvalues(func->upvalue_count, nullptr)
+	:ObjT(ObjType::Closure), function(func), upvalues(func->upvalue_count, nullptr)
 {
 }
 

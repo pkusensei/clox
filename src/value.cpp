@@ -22,14 +22,4 @@ std::ostream& operator<<(std::ostream& out, const Value& value)
 	return out;
 }
 
-bool Value::is_obj_type(ObjType type) const
-{
-	if (is_obj())
-	{
-		auto obj = as<Obj*>();
-		return obj->is_type(type);
-	}
-	return false;
-}
-
 } //Clox
