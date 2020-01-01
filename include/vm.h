@@ -11,14 +11,6 @@ namespace Clox {
 constexpr auto FRAME_MAX = 64;
 constexpr auto STACK_MAX = FRAME_MAX * UINT8_COUNT;
 
-template<typename T, typename... Args>
-void err_print(T&& t, Args&&... args)
-{
-	std::cerr << std::forward<T>(t);
-	if constexpr (sizeof...(Args) > 0)
-		err_print(std::forward<Args>(args)...);
-}
-
 enum class InterpretResult
 {
 	Ok,
@@ -74,7 +66,8 @@ private:
 	template<typename... Args>
 	void runtime_error(Args&&... args)
 	{
-		err_print(std::forward<Args>(args)...);
+		static_assert(sizeof...(Args) > 0);
+		(std::cerr << ... << std::forward<Args>(args));
 		std::cerr << '\n';
 		for (int i = frame_count - 1; i >= 0; i--)
 		{
