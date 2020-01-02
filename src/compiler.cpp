@@ -161,6 +161,21 @@ void Compilation::call([[maybe_unused]] bool can_assign)
 	emit_byte(OpCode::Call, arg_count);
 }
 
+void Compilation::dot(bool can_assign)
+{
+	parser->consume(TokenType::Identifier, "Expect property name after '.'.");
+	auto name = identifier_constant(parser->previous);
+
+	if (can_assign && parser->match(TokenType::Equal))
+	{
+		expression();
+		emit_byte(OpCode::SetProperty, name);
+	} else
+	{
+		emit_byte(OpCode::GetProperty, name);
+	}
+}
+
 void Compilation::grouping([[maybe_unused]] bool can_assign)
 {
 	expression();

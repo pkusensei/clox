@@ -20,6 +20,8 @@ std::string_view nameof(OpCode code)
 		case OpCode::SetGlobal: return "OpSetGlobal"sv;
 		case OpCode::GetUpvalue: return "OpGetUpvalue"sv;
 		case OpCode::SetUpvalue: return "OpSetUpvalue"sv;
+		case OpCode::GetProperty: return "OpGetProperty"sv;
+		case OpCode::SetProperty: return "OpSetProperty"sv;
 		case OpCode::Equal: return "OpEqual"sv;
 		case OpCode::Greater: return "OpGreater"sv;
 		case OpCode::Less: return "OpLess"sv;

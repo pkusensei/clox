@@ -134,7 +134,7 @@ template<typename T, typename... Args>
 
 template<typename T>
 constexpr auto nameof()
-->typename std::enable_if_t<std::is_base_of_v<Obj, T> && std::is_final_v<T>, std::string_view>
+->typename std::enable_if_t<std::is_base_of_v<Obj, T> && !std::is_same_v<Obj, T>, std::string_view>
 {
 	using namespace std::literals;
 
@@ -157,7 +157,7 @@ constexpr auto nameof()
 
 template<typename T>
 constexpr auto objtype_of()
-->typename std::enable_if_t<std::is_base_of_v<Obj, T> && std::is_final_v<T>, ObjType>
+->typename std::enable_if_t<std::is_base_of_v<Obj, T> && !std::is_same_v<Obj, T>, ObjType>
 {
 	using namespace std::literals;
 

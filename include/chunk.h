@@ -25,6 +25,8 @@ enum class OpCode :uint8_t
 	SetGlobal,
 	GetUpvalue,
 	SetUpvalue,
+	GetProperty,
+	SetProperty,
 	Equal,
 	Greater,
 	Less,

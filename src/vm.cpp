@@ -149,6 +149,43 @@ do{\
 				*frame->closure->upvalues.at(slot)->location = peek(0);
 				break;
 			}
+			case OpCode::GetProperty:
+			{
+				if (!peek(0).is_obj_type<ObjInstance>())
+				{
+					runtime_error("Only instances have properties.");
+					return InterpretResult::RuntimeError;
+				}
+
+				auto instance = peek(0).as_obj<ObjInstance>();
+				auto name = frame->read_string();
+				try
+				{
+					auto& value = instance->fields.at(name);
+					pop();
+					push(value);
+				} catch (const std::out_of_range&)
+				{
+					runtime_error("Undefined property '", name->text(), "'.");
+					return InterpretResult::RuntimeError;
+				}
+				break;
+			}
+			case OpCode::SetProperty:
+			{
+				if (!peek(1).is_obj_type<ObjInstance>())
+				{
+					runtime_error("Only instances have fields.");
+					return InterpretResult::RuntimeError;
+				}
+				auto instance = peek(1).as_obj<ObjInstance>();
+				instance->fields.insert_or_assign(frame->read_string(), peek(0));
+
+				auto value = pop();
+				pop();
+				push(value);
+				break;
+			}
 			case OpCode::Equal:
 			{
 				auto b = pop();
@@ -160,7 +197,7 @@ do{\
 			case OpCode::Less: BINARY_OP(< ); break;
 			case OpCode::Add:
 			{
-				if (peek(0).is_obj_type<ObjString>() 
+				if (peek(0).is_obj_type<ObjString>()
 					&& peek(1).is_obj_type<ObjString>())
 				{
 					auto b = peek(0).as_obj<ObjString>();

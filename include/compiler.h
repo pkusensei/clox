@@ -118,6 +118,7 @@ private:
 	void and_(bool can_assign);
 	void binary(bool can_assign);
 	void call(bool can_assign);
+	void dot(bool can_assign);
 	void grouping(bool can_assign);
 	void literal(bool can_assign);
 	void number(bool can_assign);
@@ -218,7 +219,7 @@ public:
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::LEFT_BRACE
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::RIGHT_BRACE     
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::COMMA           
-	  { nullptr,     nullptr,    Precedence::None },       // TokenType::DOT             
+	  { nullptr,     &Compilation::dot,    Precedence::Call },       // TokenType::DOT             
 	  { &Compilation::unary, &Compilation::binary, Precedence::Term },       // TokenType::MINUS           
 	  { nullptr,     &Compilation::binary, Precedence::Term },       // TokenType::PLUS            
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::SEMICOLON       
