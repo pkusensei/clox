@@ -6,14 +6,7 @@
 
 namespace Clox {
 
-enum class ObjType;
 struct Obj;
-struct ObjClass;
-struct ObjClosure;
-struct ObjFunction;
-struct ObjInstance;
-struct ObjNative;
-struct ObjString;
 
 template<typename T>
 struct Allocator;
@@ -70,11 +63,11 @@ struct Value
 
 };
 
-constexpr bool operator==(const Value& v1, const Value& v2)noexcept
+[[nodiscard]] constexpr bool operator==(const Value& v1, const Value& v2)noexcept
 {
 	return v1.value == v2.value;
 }
-constexpr bool operator!=(const Value& v1, const Value& v2)noexcept
+[[nodiscard]] constexpr bool operator!=(const Value& v1, const Value& v2)noexcept
 {
 	return !(v1 == v2);
 }

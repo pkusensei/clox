@@ -11,7 +11,7 @@ struct ObjString final :public Obj
 {
 	clox_string content;
 
-	ObjString()noexcept :Obj(ObjType::String) {}
+	explicit ObjString()noexcept :Obj(ObjType::String) {}
 	std::string_view text()const { return content; }
 };
 
