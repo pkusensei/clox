@@ -52,9 +52,6 @@ struct Allocator final :public AllocBase
 	constexpr void deallocate(T* p, std::size_t n)noexcept;
 };
 
-template<typename T>
-using AllocTraits = std::allocator_traits<Allocator<T>>;
-
 struct GC
 {
 	std::unique_ptr<Obj, ObjDeleter> objects = nullptr;

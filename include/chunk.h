@@ -50,13 +50,13 @@ enum class OpCode :uint8_t
 std::string_view nameof(OpCode code);
 std::ostream& operator<<(std::ostream& out, OpCode code);
 
-namespace {
+namespace detail {
 template<typename T>
 using opcode_trait_helper = std::disjunction<std::is_same<uint8_t, T>, std::is_same<OpCode, T>>;
 }
 
 template<typename... Ts>
-using opcode_trait = std::conjunction<opcode_trait_helper<Ts>...>;
+using opcode_trait = std::conjunction<detail::opcode_trait_helper<Ts>...>;
 
 template<typename... Ts>
 constexpr bool opcode_trait_v = opcode_trait<Ts...>::value;

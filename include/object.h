@@ -14,14 +14,15 @@ struct ObjFunction;
 struct ObjUpvalue;
 
 std::ostream& operator<<(std::ostream& out, const Obj& obj);
-void register_obj(std::unique_ptr<Obj, ObjDeleter>& obj, GC& gc)noexcept;
+void register_obj(std::unique_ptr<Obj, ObjDeleter>&& obj, GC& gc)noexcept;
 
 template<typename T, template<typename>typename Alloc = Allocator>
 auto delete_obj(Alloc<T>& a, T* ptr)
 ->typename std::enable_if_t<std::is_base_of_v<Obj, T>, void>
 {
-	AllocTraits<T>::destroy(a, ptr);
-	AllocTraits<T>::deallocate(a, ptr, 1);
+	using AllocTraits = std::allocator_traits<Alloc<T>>;
+	AllocTraits::destroy(a, ptr);
+	AllocTraits::deallocate(a, ptr, 1);
 }
 
 struct ObjClass final :public Obj
@@ -101,8 +102,9 @@ template<typename T, template<typename> typename Alloc = Allocator, typename... 
 {
 	static Alloc<T> a;
 
-	auto p = AllocTraits<T>::allocate(a, 1);
-	AllocTraits<T>::construct(a, p, std::forward<Args>(args)...);
+	using AllocTraits = std::allocator_traits<Alloc<T>>;
+	auto p = AllocTraits::allocate(a, 1);
+	AllocTraits::construct(a, p, std::forward<Args>(args)...);
 
 #ifdef DEBUG_LOG_GC
 	std::cout << (void*)p << " allocate " << sizeof(T);
@@ -128,7 +130,7 @@ template<typename T, typename... Args>
 	static_assert(std::is_constructible_v<T, Args...>);
 	auto p = alloc_unique_obj<T>(std::forward<Args>(args)...);
 	auto res = p.get();
-	register_obj(p, gc);
+	register_obj(std::move(p), gc);
 	return static_cast<T*>(res);
 }
 
@@ -159,8 +161,6 @@ template<typename T>
 constexpr auto objtype_of()
 ->typename std::enable_if_t<std::is_base_of_v<Obj, T> && !std::is_same_v<Obj, T>, ObjType>
 {
-	using namespace std::literals;
-
 	if constexpr (std::is_same_v<T, ObjClass>)
 		return ObjType::Class;
 	else if constexpr (std::is_same_v<T, ObjClosure>)

@@ -30,7 +30,7 @@ template<typename T>
 	vm.push(res);
 	res->content = std::forward<T>(str);
 	vm.gc.strings.emplace(res);
-	register_obj(p, vm.gc);
+	register_obj(std::move(p), vm.gc);
 	vm.pop();
 	return res;
 }
