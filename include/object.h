@@ -29,7 +29,7 @@ struct ObjClass final :public Obj
 {
 	ObjString* const name;
 
-	constexpr ObjClass(ObjString* name) noexcept
+	constexpr explicit ObjClass(ObjString* name) noexcept
 		:Obj(ObjType::Class), name(name)
 	{
 	}
@@ -41,7 +41,7 @@ struct ObjClosure final :public Obj
 	ObjFunction* const function;
 	std::vector<ObjUpvalue*, Allocator<ObjUpvalue*>> upvalues;
 
-	ObjClosure(ObjFunction* func);
+	explicit ObjClosure(ObjFunction* func);
 
 	constexpr size_t upvalue_count()const noexcept { return upvalues.size(); }
 };
@@ -63,7 +63,7 @@ struct ObjInstance final :public Obj
 	ObjClass* const klass;
 	table fields;
 
-	ObjInstance(ObjClass* klass)
+	explicit ObjInstance(ObjClass* klass)
 		:Obj(ObjType::Instance), klass(klass)
 	{
 	}
@@ -76,7 +76,7 @@ struct ObjNative final :public Obj
 {
 	NativeFn function;
 
-	constexpr ObjNative(NativeFn func)noexcept
+	constexpr explicit ObjNative(NativeFn func)noexcept
 		:Obj(ObjType::Native), function(func)
 	{
 	}
@@ -89,7 +89,7 @@ struct ObjUpvalue final :public Obj
 	Value closed;
 	ObjUpvalue* next = nullptr;
 
-	constexpr ObjUpvalue(Value* slot)noexcept
+	constexpr explicit ObjUpvalue(Value* slot)noexcept
 		:Obj(ObjType::Upvalue), location(slot)
 	{
 	}
