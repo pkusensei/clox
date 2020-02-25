@@ -65,7 +65,7 @@ void GC::mark_compiler_roots()
 	}
 }
 
-void GC::mark_object(Obj* ptr)
+void GC::mark_object(Obj* const ptr)
 {
 	if (ptr == nullptr) return;
 	if (ptr->is_marked) return;
@@ -113,10 +113,18 @@ void GC::blacken_object(Obj* ptr)
 
 	switch (ptr->type)
 	{
+		case ObjType::BoundMethod:
+		{
+			auto bound = static_cast<ObjBoundMethod*>(ptr);
+			mark_value(bound->receiver);
+			mark_object(bound->method);
+			break;
+		}
 		case ObjType::Class:
 		{
 			auto klass = static_cast<ObjClass*>(ptr);
 			mark_object(klass->name);
+			mark_table(klass->methods);
 			break;
 		}
 		case ObjType::Closure:

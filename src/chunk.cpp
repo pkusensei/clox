@@ -40,6 +40,7 @@ std::string_view nameof(OpCode code)
 		case OpCode::CloseUpvalue: return "OpCloseUpvalue"sv;
 		case OpCode::Return: return "OpReturn"sv;
 		case OpCode::Class: return "OpClass"sv;
+		case OpCode::Method: return "OpMethod"sv;
 		default:
 			throw std::invalid_argument("Unexpected OpCode: nameof");
 	}

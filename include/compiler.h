@@ -141,6 +141,7 @@ private:
 	void fun_declaration();
 	void var_declaration();
 	void function(FunctionType type);
+	void method();
 
 	[[nodiscard]] uint8_t argument_list();
 	void declare_variable();

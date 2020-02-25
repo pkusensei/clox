@@ -399,14 +399,19 @@ void Compilation::declaration()
 void Compilation::class_declaration()
 {
 	parser->consume(TokenType::Identifier, "Expect class name.");
+	auto& class_name = parser->previous;
 	auto name_constant = identifier_constant(parser->previous);
 	declare_variable();
 
 	emit_byte(OpCode::Class, name_constant);
 	define_variable(name_constant);
 
+	named_variable(class_name, false);
 	parser->consume(TokenType::LeftBrace, "Expect '{' before class body.");
+	while (!parser->check(TokenType::RightBrace) && !parser->check(TokenType::Eof))
+		method();
 	parser->consume(TokenType::RightBrace, "Expect '}' after class body.");
+	emit_byte(OpCode::Pop);
 }
 
 void Compilation::fun_declaration()
@@ -459,6 +464,14 @@ void Compilation::function(FunctionType type)
 		emit_byte(static_cast<uint8_t>(done->upvalues.at(i).is_local ? 1 : 0));
 		emit_byte(done->upvalues.at(i).index);
 	}
+}
+
+void Compilation::method()
+{
+	parser->consume(TokenType::Identifier, "Expect method name.");
+	auto constant = identifier_constant(parser->previous);
+	function(FunctionType::Function);
+	emit_byte(OpCode::Method, constant);
 }
 
 uint8_t Compilation::argument_list()

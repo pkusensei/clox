@@ -74,6 +74,12 @@ std::ostream& operator<<(std::ostream& out, const ObjInstance& ins)
 	return out;
 }
 
+std::ostream& operator<<(std::ostream& out, const ObjBoundMethod& bm)
+{
+	out << *bm.method->function;
+	return out;
+}
+
 std::ostream& operator<<(std::ostream& out, [[maybe_unused]] const ObjNative& s)
 {
 	out << "<native fn>";

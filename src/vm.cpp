@@ -166,8 +166,8 @@ do{\
 					push(value);
 				} catch (const std::out_of_range&)
 				{
-					runtime_error("Undefined property '", name->text(), "'.");
-					return InterpretResult::RuntimeError;
+					if (!bind_method(instance->klass, name))
+						return InterpretResult::RuntimeError;
 				}
 				break;
 			}
@@ -298,6 +298,9 @@ do{\
 			case OpCode::Class:
 				push(create_obj<ObjClass>(gc, frame->read_string()));
 				break;
+			case OpCode::Method:
+				define_method(frame->read_string());
+				break;
 			default:
 				break;
 		}
@@ -340,6 +343,14 @@ void VM::close_upvalues(Value* last)
 	}
 }
 
+void VM::define_method(ObjString* name)
+{
+	auto method = peek(0);
+	auto klass = peek(1).as_obj<ObjClass>();
+	klass->methods.insert_or_assign(name, method);
+	pop();
+}
+
 bool VM::call(const ObjClosure* closure, uint8_t arg_count)
 {
 	if (arg_count != closure->function->arity)
@@ -366,6 +377,11 @@ bool VM::call_value(const Value& callee, uint8_t arg_count)
 	{
 		switch (callee.as<Obj*>()->type)
 		{
+			case ObjType::BoundMethod: 
+			{
+				auto bound = callee.as_obj<ObjBoundMethod>();
+				return call(bound->method, arg_count);
+			}
 			case ObjType::Class:
 			{
 				auto klass = callee.as_obj<ObjClass>();
@@ -387,6 +403,23 @@ bool VM::call_value(const Value& callee, uint8_t arg_count)
 		}
 	}
 	runtime_error("Can only call functions and classes.");
+	return false;
+}
+
+bool VM::bind_method(const ObjClass* klass, ObjString* name)
+{
+	try
+	{
+		auto method = klass->methods.at(name);
+		auto bound = create_obj<ObjBoundMethod>(gc, peek(0), method.as_obj<ObjClosure>());
+		pop();
+		push(bound);
+		return true;
+	} catch (const std::out_of_range&)
+	{
+		runtime_error("Undefined property ", *name, " .");
+		return false;
+	}
 	return false;
 }
 

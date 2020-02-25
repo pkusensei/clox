@@ -9,6 +9,7 @@ struct Obj;
 
 enum class ObjType
 {
+	BoundMethod,
 	Class,
 	Closure,
 	Function,

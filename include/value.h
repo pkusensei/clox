@@ -56,7 +56,7 @@ struct Value
 			else throw;
 		} catch (...)
 		{
-			throw std::invalid_argument(std::string("Value is not ")
+			throw std::invalid_argument(std::string("Value is not a(n) ")
 				+ nameof<U>().data());
 		}
 	}

@@ -74,7 +74,7 @@ private:
 	void mark_roots();
 	void mark_array(const ValueArray<>& array);
 	void mark_compiler_roots();
-	void mark_object(Obj* ptr);
+	void mark_object(Obj* const ptr);
 	void mark_table(const table& table);
 	void mark_value(const Value& value);
 

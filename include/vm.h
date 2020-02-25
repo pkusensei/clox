@@ -55,8 +55,10 @@ private:
 
 	[[nodiscard]] ObjUpvalue* captured_upvalue(Value* local);
 	void close_upvalues(Value* last);
+	void define_method(ObjString* name);
 	[[nodiscard]] bool call(const ObjClosure* closure, uint8_t arg_count);
 	[[nodiscard]] bool call_value(const Value& callee, uint8_t arg_count);
+	[[nodiscard]] bool bind_method(const ObjClass* klass, ObjString* name);
 	void define_native(std::string_view name, NativeFn function);
 
 	[[nodiscard]] const Value& peek(size_t distance)const;

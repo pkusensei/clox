@@ -77,6 +77,7 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset)
 		case OpCode::GetProperty:
 		case OpCode::SetProperty:
 		case OpCode::Class:
+		case OpCode::Method:
 			return constant_instruction(nameof(instruction), chunk, offset);
 		case OpCode::Jump:
 		case OpCode::JumpIfFalse:

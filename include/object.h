@@ -10,9 +10,6 @@ namespace Clox {
 
 struct GC;
 
-struct ObjFunction;
-struct ObjUpvalue;
-
 std::ostream& operator<<(std::ostream& out, const Obj& obj);
 void register_obj(std::unique_ptr<Obj, ObjDeleter>&& obj, GC& gc)noexcept;
 
@@ -25,28 +22,6 @@ auto delete_obj(Alloc<T>& a, T* ptr)
 	AllocTraits::deallocate(a, ptr, 1);
 }
 
-struct ObjClass final :public Obj
-{
-	ObjString* const name;
-
-	constexpr explicit ObjClass(ObjString* name) noexcept
-		:Obj(ObjType::Class), name(name)
-	{
-	}
-};
-std::ostream& operator<<(std::ostream& out, const ObjClass& c);
-
-struct ObjClosure final :public Obj
-{
-	ObjFunction* const function;
-	std::vector<ObjUpvalue*, Allocator<ObjUpvalue*>> upvalues;
-
-	explicit ObjClosure(ObjFunction* func);
-
-	constexpr size_t upvalue_count()const noexcept { return upvalues.size(); }
-};
-std::ostream& operator<<(std::ostream& out, const ObjClosure& s);
-
 struct ObjFunction final : public Obj
 {
 	size_t arity = 0;
@@ -57,18 +32,6 @@ struct ObjFunction final : public Obj
 	ObjFunction() :Obj(ObjType::Function) {}
 };
 std::ostream& operator<<(std::ostream& out, const ObjFunction& f);
-
-struct ObjInstance final :public Obj
-{
-	ObjClass* const klass;
-	table fields;
-
-	explicit ObjInstance(ObjClass* klass)
-		:Obj(ObjType::Instance), klass(klass)
-	{
-	}
-};
-std::ostream& operator<<(std::ostream& out, const ObjInstance& ins);
 
 using NativeFn = Value(*)(uint8_t arg_count, Value * args);
 
@@ -95,6 +58,53 @@ struct ObjUpvalue final :public Obj
 	}
 };
 std::ostream& operator<<(std::ostream& out, const ObjUpvalue& s);
+
+struct ObjClosure final :public Obj
+{
+	ObjFunction* const function;
+	std::vector<ObjUpvalue*, Allocator<ObjUpvalue*>> upvalues;
+
+	explicit ObjClosure(ObjFunction* func);
+
+	constexpr size_t upvalue_count()const noexcept { return upvalues.size(); }
+};
+std::ostream& operator<<(std::ostream& out, const ObjClosure& s);
+
+struct ObjClass final :public Obj
+{
+	ObjString* const name;
+	table methods;
+
+	ObjClass(ObjString* name) noexcept
+		:Obj(ObjType::Class), name(name)
+	{
+	}
+};
+std::ostream& operator<<(std::ostream& out, const ObjClass& c);
+
+struct ObjInstance final :public Obj
+{
+	ObjClass* const klass;
+	table fields;
+
+	explicit ObjInstance(ObjClass* klass)
+		:Obj(ObjType::Instance), klass(klass)
+	{
+	}
+};
+std::ostream& operator<<(std::ostream& out, const ObjInstance& ins);
+
+struct ObjBoundMethod :public Obj
+{
+	Value receiver;
+	ObjClosure* const method;
+
+	constexpr ObjBoundMethod(Value receiver, ObjClosure* const method)
+		:Obj(ObjType::BoundMethod), receiver(std::move(receiver)), method(method)
+	{
+	}
+};
+std::ostream& operator<<(std::ostream& out, const ObjBoundMethod& bm);
 
 template<typename T, template<typename> typename Alloc = Allocator, typename... Args>
 [[nodiscard]] auto alloc_unique_obj(Args&&... args)
@@ -135,33 +145,12 @@ template<typename T, typename... Args>
 }
 
 template<typename T>
-constexpr auto nameof()
-->typename std::enable_if_t<std::is_base_of_v<Obj, T> && !std::is_same_v<Obj, T>, std::string_view>
-{
-	using namespace std::literals;
-
-	if constexpr (std::is_same_v<T, ObjClass>)
-		return "class"sv;
-	else if constexpr (std::is_same_v<T, ObjClosure>)
-		return "closure"sv;
-	else if constexpr (std::is_same_v<T, ObjFunction>)
-		return "function"sv;
-	else if constexpr (std::is_same_v<T, ObjInstance>)
-		return "instance"sv;
-	else if constexpr (std::is_same_v<T, ObjNative>)
-		return "native"sv;
-	else if constexpr (std::is_same_v<T, ObjString>)
-		return "string"sv;
-	else if constexpr (std::is_same_v<T, ObjUpvalue>)
-		return "upvalue"sv;
-
-}
-
-template<typename T>
 constexpr auto objtype_of()
 ->typename std::enable_if_t<std::is_base_of_v<Obj, T> && !std::is_same_v<Obj, T>, ObjType>
 {
-	if constexpr (std::is_same_v<T, ObjClass>)
+	if constexpr (std::is_same_v<T, ObjBoundMethod>)
+		return ObjType::BoundMethod;
+	else if constexpr (std::is_same_v<T, ObjClass>)
 		return ObjType::Class;
 	else if constexpr (std::is_same_v<T, ObjClosure>)
 		return ObjType::Closure;
@@ -175,6 +164,33 @@ constexpr auto objtype_of()
 		return ObjType::String;
 	else if constexpr (std::is_same_v<T, ObjUpvalue>)
 		return ObjType::Upvalue;
+}
+
+template<typename T>
+constexpr auto nameof()
+->typename std::enable_if_t<std::is_base_of_v<Obj, T> && !std::is_same_v<Obj, T>, std::string_view>
+{
+	using namespace std::literals;
+
+	switch (objtype_of<T>())
+	{
+		case ObjType::BoundMethod:
+			return "bound method"sv;
+		case ObjType::Class:
+			return "class"sv;
+		case ObjType::Closure:
+			return "closure"sv;
+		case ObjType::Function:
+			return "function"sv;
+		case ObjType::Instance:
+			return "instance"sv;
+		case ObjType::Native:
+			return "native function"sv;
+		case ObjType::String:
+			return "string"sv;
+		case ObjType::Upvalue:
+			return "upvalue"sv;
+	}
 }
 
 } //Clox
