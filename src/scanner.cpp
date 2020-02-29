@@ -156,8 +156,8 @@ TokenType Scanner::identifier_type() const
 
 TokenType Scanner::check_keyword(size_t begin, size_t length, std::string_view rest, TokenType type) const
 {
-	auto name = source.substr(start + begin, length);
-	if (name == rest)
+	if (current - start == begin + length
+		&& source.substr(start + begin, length) == rest)
 		return type;
 	return TokenType::Identifier;
 }

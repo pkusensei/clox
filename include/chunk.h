@@ -41,6 +41,7 @@ enum class OpCode :uint8_t
 	JumpIfFalse,
 	Loop,
 	Call,
+	Invoke,
 	Closure,
 	CloseUpvalue,
 	Return,

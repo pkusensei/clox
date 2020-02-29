@@ -28,7 +28,18 @@ void disassemble_chunk(const Chunk& chunk, std::string_view name)
 {
 	auto constant = chunk.code.at(offset + 1);
 	std::cout << std::setfill(' ') << std::left << std::setw(16) << name << ' ';
-	std::cout << std::setw(4) << static_cast<unsigned>(constant) << ' ';
+	std::cout << std::setw(4) << static_cast<unsigned>(constant) << " '";
+	std::cout << chunk.constants.values.at(static_cast<size_t>(constant)) << '\n';
+	return offset + 2;
+}
+
+[[nodiscard]] size_t invoke_instruction(std::string_view name, const Chunk& chunk, size_t offset)
+{
+	auto constant = chunk.code.at(offset + 1);
+	auto arg_count = chunk.code.at(offset + 2);
+	std::cout << std::setfill(' ') << std::left << std::setw(16) << name << ' ';
+	std::cout << '(' << static_cast<unsigned>(arg_count) << " args) ";
+	std::cout << std::setw(4) << static_cast<unsigned>(constant) << " '";
 	std::cout << chunk.constants.values.at(static_cast<size_t>(constant)) << '\n';
 	return offset + 2;
 }
@@ -101,6 +112,8 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset)
 		case OpCode::CloseUpvalue:
 		case OpCode::Return:
 			return simple_instruction(nameof(instruction), offset);
+		case OpCode::Invoke:
+			return invoke_instruction(nameof(instruction), chunk, offset);
 		case OpCode::Closure:
 		{
 			offset++;

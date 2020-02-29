@@ -44,9 +44,8 @@ VM::VM()
 	:cu(*this), gc(*this)
 {
 	AllocBase::init(&gc);
-
 	reset_stack();
-
+	init_string = create_obj_string("init", *this);
 	define_native("clock", clock_native);
 }
 
@@ -260,6 +259,15 @@ do{\
 				frame = &frames.at(frame_count - 1);
 				break;
 			}
+			case OpCode::Invoke:
+			{
+				auto method = frame->read_string();
+				auto arg_count = frame->read_byte();
+				if (!invoke(method, arg_count))
+					return InterpretResult::RuntimeError;
+				frame = &frames.at(frame_count - 1);
+				break;
+			}
 			case OpCode::Closure:
 			{
 				auto function = frame->read_constant().as_obj<ObjFunction>();
@@ -377,15 +385,28 @@ bool VM::call_value(const Value& callee, uint8_t arg_count)
 	{
 		switch (callee.as<Obj*>()->type)
 		{
-			case ObjType::BoundMethod: 
+			case ObjType::BoundMethod:
 			{
 				auto bound = callee.as_obj<ObjBoundMethod>();
+				stacktop[-arg_count - 1] = bound->receiver;
 				return call(bound->method, arg_count);
 			}
 			case ObjType::Class:
 			{
 				auto klass = callee.as_obj<ObjClass>();
 				stacktop[-arg_count - 1] = create_obj<ObjInstance>(gc, klass);
+				try
+				{
+					auto& initializer = klass->methods.at(init_string);
+					return call(initializer.as_obj<ObjClosure>(), arg_count);
+				} catch (const std::out_of_range&)
+				{
+					if (arg_count != 0)
+					{
+						runtime_error("Expected 0 arguments but got ", arg_count, " .");
+						return false;
+					}
+				}
 				return true;
 			}
 			case ObjType::Closure:
@@ -421,6 +442,39 @@ bool VM::bind_method(const ObjClass* klass, ObjString* name)
 		return false;
 	}
 	return false;
+}
+
+bool VM::invoke(ObjString* const name, uint8_t arg_count)
+{
+	auto& receiver = peek(arg_count);
+	if (!receiver.is_obj_type<ObjInstance>())
+	{
+		runtime_error("Only instances have methods");
+		return false;
+	}
+	auto instance = receiver.as_obj<ObjInstance>();
+
+	try
+	{
+		auto& value = instance->fields.at(name);
+		stacktop[-arg_count - 1] = value;
+		return call_value(value, arg_count);
+	} catch (const std::out_of_range&) {}
+
+	return invoke_from_class(instance->klass, name, arg_count);
+}
+
+bool VM::invoke_from_class(const ObjClass* klass, ObjString* name, uint8_t arg_count)
+{
+	try
+	{
+		auto& method = klass->methods.at(name);
+		return call(method.as_obj<ObjClosure>(), arg_count);
+	} catch (const std::out_of_range&)
+	{
+		runtime_error("Undefined property '", *name, "'.");
+		return false;
+	}
 }
 
 void VM::define_native(std::string_view name, NativeFn function)

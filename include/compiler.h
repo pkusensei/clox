@@ -71,6 +71,8 @@ struct ParseRule
 enum class FunctionType
 {
 	Function,
+	Initializer,
+	Method,
 	Script,
 };
 
@@ -99,9 +101,16 @@ struct Compiler
 	int scope_depth = 0;
 };
 
+struct ClassCompiler
+{
+	std::unique_ptr<ClassCompiler> enclosing = nullptr;
+	Token name;
+};
+
 struct Compilation
 {
 	std::unique_ptr<Compiler> current = nullptr;
+	std::unique_ptr<ClassCompiler> current_class = nullptr;
 	std::unique_ptr<Parser> parser = nullptr;
 	VM& vm;
 
@@ -126,6 +135,7 @@ private:
 	void string(bool can_assign);
 	void unary(bool can_assign);
 	void variable(bool can_assign);
+	void this_(bool can_assign);
 
 	void statement();
 	void block();
@@ -249,7 +259,7 @@ public:
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::PRINT           
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::RETURN          
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::SUPER           
-	  { nullptr,     nullptr,    Precedence::None },       // TokenType::THIS            
+	  { &Compilation::this_,     nullptr,    Precedence::None },       // TokenType::THIS            
 	  { &Compilation::literal,   nullptr,    Precedence::None },       // TokenType::TRUE            
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::VAR             
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::WHILE           

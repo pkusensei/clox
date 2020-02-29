@@ -47,6 +47,7 @@ void GC::mark_roots()
 
 	mark_table(vm.globals);
 	mark_compiler_roots();
+	mark_object(vm.init_string);
 }
 
 void GC::mark_array(const ValueArray<>& array)

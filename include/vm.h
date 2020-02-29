@@ -39,6 +39,7 @@ struct VM
 	std::array<Value, STACK_MAX> stack;
 	Value* stacktop = nullptr;
 	table globals;
+	ObjString* init_string = nullptr;
 	ObjUpvalue* open_upvalues = nullptr;
 
 	Compilation cu;
@@ -59,6 +60,9 @@ private:
 	[[nodiscard]] bool call(const ObjClosure* closure, uint8_t arg_count);
 	[[nodiscard]] bool call_value(const Value& callee, uint8_t arg_count);
 	[[nodiscard]] bool bind_method(const ObjClass* klass, ObjString* name);
+	[[nodiscard]] bool invoke(ObjString* const name, uint8_t arg_count);
+	[[nodiscard]] bool invoke_from_class(const ObjClass* klass,
+		ObjString* name, uint8_t arg_count);
 	void define_native(std::string_view name, NativeFn function);
 
 	[[nodiscard]] const Value& peek(size_t distance)const;

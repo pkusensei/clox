@@ -36,6 +36,7 @@ std::string_view nameof(OpCode code)
 		case OpCode::JumpIfFalse: return "OpJumpIfFalse"sv;
 		case OpCode::Loop: return "OpLoop"sv;
 		case OpCode::Call: return "OpCall"sv;
+		case OpCode::Invoke: return "OpInvoke"sv;
 		case OpCode::Closure: return "OpClosure"sv;
 		case OpCode::CloseUpvalue: return "OpCloseUpvalue"sv;
 		case OpCode::Return: return "OpReturn"sv;

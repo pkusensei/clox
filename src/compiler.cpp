@@ -170,7 +170,12 @@ void Compilation::dot(bool can_assign)
 	{
 		expression();
 		emit_byte(OpCode::SetProperty, name);
-	} else
+	} else if (parser->match(TokenType::LeftParen))
+	{
+		auto arg_count = argument_list();
+		emit_byte(OpCode::Invoke, name, arg_count);
+	}
+	else
 	{
 		emit_byte(OpCode::GetProperty, name);
 	}
@@ -235,6 +240,16 @@ void Compilation::unary([[maybe_unused]] bool can_assign)
 void Compilation::variable(bool can_assign)
 {
 	named_variable(parser->previous, can_assign);
+}
+
+void Compilation::this_([[maybe_unused]] bool can_assign)
+{
+	if (current_class == nullptr)
+	{
+		error(*parser, "Cannot use 'this' outside of a class");
+		return;
+	}
+	variable(false);
 }
 
 void Compilation::statement()
@@ -357,6 +372,8 @@ void Compilation::return_statement()
 		emit_return();
 	else
 	{
+		if (current->type == FunctionType::Initializer)
+			error(*parser, "Cannot return a value from an initializer");
 		expression();
 		parser->consume(TokenType::Semicolon, "Expect ';' after return value.");
 		emit_byte(OpCode::Return);
@@ -406,12 +423,19 @@ void Compilation::class_declaration()
 	emit_byte(OpCode::Class, name_constant);
 	define_variable(name_constant);
 
+	auto class_compiler = std::make_unique<ClassCompiler>();
+	class_compiler->name = parser->previous;
+	class_compiler->enclosing = std::move(current_class);
+	current_class = std::move(class_compiler);
+
 	named_variable(class_name, false);
 	parser->consume(TokenType::LeftBrace, "Expect '{' before class body.");
 	while (!parser->check(TokenType::RightBrace) && !parser->check(TokenType::Eof))
 		method();
 	parser->consume(TokenType::RightBrace, "Expect '}' after class body.");
 	emit_byte(OpCode::Pop);
+
+	current_class = std::move(current_class->enclosing);
 }
 
 void Compilation::fun_declaration()
@@ -470,7 +494,10 @@ void Compilation::method()
 {
 	parser->consume(TokenType::Identifier, "Expect method name.");
 	auto constant = identifier_constant(parser->previous);
-	function(FunctionType::Function);
+	auto type = FunctionType::Method;
+	if (parser->previous.text == "init")
+		type = FunctionType::Initializer;
+	function(type);
 	emit_byte(OpCode::Method, constant);
 }
 
@@ -609,7 +636,10 @@ void Compilation::init_compiler(FunctionType type)
 	auto& local = current->locals.at(current->local_count++);
 	local.depth = 0;
 	local.is_captured = false;
-	local.name.text = std::string_view();
+	if (type != FunctionType::Function)
+		local.name.text = "this";
+	else
+		local.name.text = std::string_view();
 }
 
 auto Compilation::end_compiler()->std::pair<ObjFunction*, std::unique_ptr<Compiler>>
@@ -735,7 +765,10 @@ void Compilation::emit_loop(size_t loop_start)
 
 void Compilation::emit_return() const
 {
-	emit_byte(OpCode::Nil);
+	if (current->type == FunctionType::Initializer)
+		emit_byte(OpCode::GetLocal, static_cast<uint8_t>(0));
+	else
+		emit_byte(OpCode::Nil);
 	emit_byte(OpCode::Return);
 }
 
