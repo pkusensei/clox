@@ -27,6 +27,7 @@ enum class OpCode :uint8_t
 	SetUpvalue,
 	GetProperty,
 	SetProperty,
+	GetSuper,
 	Equal,
 	Greater,
 	Less,
@@ -42,10 +43,12 @@ enum class OpCode :uint8_t
 	Loop,
 	Call,
 	Invoke,
+	SuperInvoke,
 	Closure,
 	CloseUpvalue,
 	Return,
 	Class,
+	Inherit,
 	Method
 };
 

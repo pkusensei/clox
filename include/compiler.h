@@ -105,6 +105,7 @@ struct ClassCompiler
 {
 	std::unique_ptr<ClassCompiler> enclosing = nullptr;
 	Token name;
+	bool has_superclass = false;
 };
 
 struct Compilation
@@ -135,6 +136,7 @@ private:
 	void string(bool can_assign);
 	void unary(bool can_assign);
 	void variable(bool can_assign);
+	void super_(bool can_assign);
 	void this_(bool can_assign);
 
 	void statement();
@@ -258,7 +260,7 @@ public:
 	  { nullptr,     &Compilation::or_,    Precedence::Or },       // TokenType::OR              
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::PRINT           
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::RETURN          
-	  { nullptr,     nullptr,    Precedence::None },       // TokenType::SUPER           
+	  { &Compilation::super_,    nullptr,    Precedence::None },       // TokenType::SUPER           
 	  { &Compilation::this_,     nullptr,    Precedence::None },       // TokenType::THIS            
 	  { &Compilation::literal,   nullptr,    Precedence::None },       // TokenType::TRUE            
 	  { nullptr,     nullptr,    Precedence::None },       // TokenType::VAR             

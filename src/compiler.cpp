@@ -46,6 +46,13 @@ void error_at(Parser& parser, const Token& token, std::string_view message)
 	parser.had_error = true;
 }
 
+[[nodiscard]] Token synthetic_token(std::string_view text)
+{
+	auto token = Token();
+	token.text = text;
+	return token;
+}
+
 void Parser::advance()
 {
 	previous = current;
@@ -174,8 +181,7 @@ void Compilation::dot(bool can_assign)
 	{
 		auto arg_count = argument_list();
 		emit_byte(OpCode::Invoke, name, arg_count);
-	}
-	else
+	} else
 	{
 		emit_byte(OpCode::GetProperty, name);
 	}
@@ -240,6 +246,30 @@ void Compilation::unary([[maybe_unused]] bool can_assign)
 void Compilation::variable(bool can_assign)
 {
 	named_variable(parser->previous, can_assign);
+}
+
+void Compilation::super_([[maybe_unused]] bool can_assign)
+{
+	if (current_class == nullptr)
+		error(*parser, "Cannot use 'super' outside of a class.");
+	else if (!current_class->has_superclass)
+		error(*parser, "Cannot use 'super' in a class with no superclass.");
+
+	parser->consume(TokenType::Dot, "Expect '.' after 'super'.");
+	parser->consume(TokenType::Identifier, "Expect superclass method name.");
+	auto name = identifier_constant(parser->previous);
+
+	named_variable(synthetic_token("this"), false);
+	if (parser->match(TokenType::LeftParen))
+	{
+		auto arg_count = argument_list();
+		named_variable(synthetic_token("super"), false);
+		emit_byte(OpCode::SuperInvoke, name, arg_count);
+	} else
+	{
+		named_variable(synthetic_token("super"), false);
+		emit_byte(OpCode::GetSuper, name);
+	}
 }
 
 void Compilation::this_([[maybe_unused]] bool can_assign)
@@ -416,7 +446,7 @@ void Compilation::declaration()
 void Compilation::class_declaration()
 {
 	parser->consume(TokenType::Identifier, "Expect class name.");
-	auto& class_name = parser->previous;
+	auto class_name = parser->previous;
 	auto name_constant = identifier_constant(parser->previous);
 	declare_variable();
 
@@ -428,12 +458,32 @@ void Compilation::class_declaration()
 	class_compiler->enclosing = std::move(current_class);
 	current_class = std::move(class_compiler);
 
+	if (parser->match(TokenType::Less))
+	{
+		parser->consume(TokenType::Identifier, "Expect superclass name.");
+		variable(false);
+
+		if (class_name.text == parser->previous.text)
+			error(*parser, "A class cannot inherit from itself.");
+
+		begin_scope();
+		add_local(synthetic_token("super"));
+		define_variable(0);
+
+		named_variable(class_name, false);
+		emit_byte(OpCode::Inherit);
+		current_class->has_superclass = true;
+	}
+
 	named_variable(class_name, false);
 	parser->consume(TokenType::LeftBrace, "Expect '{' before class body.");
 	while (!parser->check(TokenType::RightBrace) && !parser->check(TokenType::Eof))
 		method();
 	parser->consume(TokenType::RightBrace, "Expect '}' after class body.");
 	emit_byte(OpCode::Pop);
+
+	if (current_class->has_superclass)
+		end_scope();
 
 	current_class = std::move(current_class->enclosing);
 }

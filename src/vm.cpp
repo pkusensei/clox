@@ -185,6 +185,14 @@ do{\
 				push(value);
 				break;
 			}
+			case OpCode::GetSuper:
+			{
+				auto name = frame->read_string();
+				auto superclass = pop().as_obj<ObjClass>();
+				if (!bind_method(superclass, name))
+					return InterpretResult::RuntimeError;
+				break;
+			}
 			case OpCode::Equal:
 			{
 				auto b = pop();
@@ -268,6 +276,16 @@ do{\
 				frame = &frames.at(frame_count - 1);
 				break;
 			}
+			case OpCode::SuperInvoke:
+			{
+				auto method = frame->read_string();
+				auto arg_count = frame->read_byte();
+				auto superclass = pop().as_obj<ObjClass>();
+				if (!invoke_from_class(superclass, method, arg_count))
+					return InterpretResult::RuntimeError;
+				frame = &frames.at(frame_count - 1);
+				break;
+			}
 			case OpCode::Closure:
 			{
 				auto function = frame->read_constant().as_obj<ObjFunction>();
@@ -306,6 +324,21 @@ do{\
 			case OpCode::Class:
 				push(create_obj<ObjClass>(gc, frame->read_string()));
 				break;
+			case OpCode::Inherit:
+			{
+				try
+				{
+					auto superclass = peek(1).as_obj<ObjClass>();
+					auto subclass = peek(0).as_obj<ObjClass>();
+					subclass->methods.insert(superclass->methods.begin(), superclass->methods.end());
+					pop();
+				} catch (const std::invalid_argument&)
+				{
+					runtime_error("Superclass must be a class.");
+					return InterpretResult::RuntimeError;
+				}
+				break;
+			}
 			case OpCode::Method:
 				define_method(frame->read_string());
 				break;

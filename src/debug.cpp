@@ -41,7 +41,7 @@ void disassemble_chunk(const Chunk& chunk, std::string_view name)
 	std::cout << '(' << static_cast<unsigned>(arg_count) << " args) ";
 	std::cout << std::setw(4) << static_cast<unsigned>(constant) << " '";
 	std::cout << chunk.constants.values.at(static_cast<size_t>(constant)) << '\n';
-	return offset + 2;
+	return offset + 3;
 }
 
 [[nodiscard]] size_t jump_instruction(std::string_view name, int sign, const Chunk& chunk, size_t offset)
@@ -87,6 +87,7 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset)
 		case OpCode::SetGlobal:
 		case OpCode::GetProperty:
 		case OpCode::SetProperty:
+		case OpCode::GetSuper:
 		case OpCode::Class:
 		case OpCode::Method:
 			return constant_instruction(nameof(instruction), chunk, offset);
@@ -111,8 +112,10 @@ size_t disassemble_instruction(const Chunk& chunk, size_t offset)
 		case OpCode::Print:
 		case OpCode::CloseUpvalue:
 		case OpCode::Return:
+		case OpCode::Inherit:
 			return simple_instruction(nameof(instruction), offset);
 		case OpCode::Invoke:
+		case OpCode::SuperInvoke:
 			return invoke_instruction(nameof(instruction), chunk, offset);
 		case OpCode::Closure:
 		{
