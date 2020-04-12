@@ -5,17 +5,6 @@
 
 namespace Clox {
 
-#ifdef NAN_BOXING
-
-Value::Value(double num) noexcept
-{
-	DoubleUnion data;
-	data.num = num;
-	value = data.bits;
-}
-
-#endif // NAN_BOXING
-
 std::ostream& operator<<(std::ostream& out, const Value& value)
 {
 #ifdef NAN_BOXING

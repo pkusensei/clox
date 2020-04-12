@@ -45,7 +45,10 @@ struct Value
 	{
 	}
 	constexpr Value() noexcept : value(QNAN | TAG_NIL) {}
-	Value(double num) noexcept;
+	Value(double num) noexcept
+		:value(reinterpret_cast<uint64_t&>(num))
+	{
+	}
 	Value(Obj* obj) noexcept
 		: value(SIGN_BIT | QNAN | static_cast<uint64_t>(reinterpret_cast<uintptr_t>(obj)))
 	{
@@ -79,9 +82,7 @@ struct Value
 			return value == TRUE_VAL;
 		} else if constexpr (std::is_same_v<T, double>)
 		{
-			DoubleUnion data;
-			data.bits = value;
-			return data.num;
+			return reinterpret_cast<const double&>(value);
 		} else if constexpr (std::is_same_v<T, Obj*>)
 		{
 			return reinterpret_cast<Obj*>(static_cast<uintptr_t>(value & ~(SIGN_BIT | QNAN)));
@@ -155,7 +156,6 @@ struct Value
 {
 	return !(v1 == v2);
 }
-
 
 std::ostream& operator<<(std::ostream& out, const Value& value);
 
